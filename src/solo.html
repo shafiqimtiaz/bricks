@@ -280,7 +280,7 @@ html,body,body *{font-family:'Press Start 2P',ui-monospace,monospace!important}
     <div id="lbidentity"><button id="pname" type="button">Player</button><a id="pfull" target="_blank" rel="noopener" href="/leaderboard">World ↗</a></div><div id="ptime"></div>
     <div id="pnote"></div>
     <ol id="plist"></ol>
-    <div class="pb"><button id="pbrag">brag ⤴</button><button id="pretry">retry</button><button id="pnext">new board ▶</button><button id="pclose">close</button><button id="pmodeInf" type="button" hidden>PLAY INFINITE</button><button id="pmodeCls" type="button" hidden>PLAY CLASSIC</button></div>
+    <div class="pb"><button id="pbrag">CHALLENGE</button><button id="pretry">RETRY</button><button id="pnext">NEW ROOM</button><button id="pclose">close</button><button id="pmodeInf" type="button" hidden>PLAY INFINITE</button><button id="pmodeCls" type="button" hidden>PLAY CLASSIC</button></div>
   </div>
 </div>
 <div id="crt" aria-hidden="true"></div>
@@ -313,6 +313,7 @@ let seed = hm ? hm[1].toLowerCase() : randomSeed();
 function syncURL(){try{
  const url=new URL(location.href);
  url.searchParams.delete('v');
+ url.searchParams.set('mode',soloMode);
  url.hash=seed;history.replaceState(null,'',url.pathname+url.search+url.hash);
 }catch(e){}}
 window.addEventListener('hashchange',()=>{
@@ -474,6 +475,8 @@ const MAX_LIVES = 5;
 const SOLO_MODE_KEY = 'bricksSoloMode';
 let soloMode = 'solo';
 try { if (localStorage.getItem(SOLO_MODE_KEY) === 'infinite') soloMode = 'infinite'; } catch (e) {}
+const incomingMode = new URLSearchParams(location.search).get('mode');
+if (incomingMode === 'solo' || incomingMode === 'infinite') soloMode = incomingMode;
 let lives = MAX_LIVES, runTime = 0, timerOn = false, paused = false;
 function syncArena(){
   const base = lockedArena||arenaLayout(window.innerWidth / window.innerHeight);
@@ -842,8 +845,13 @@ setInterval(() => { const d = (fx.invert > 0 ? -14 : 14) * W / 360 * sensitivity
 
 const toast = document.getElementById('toast');
 function showToast(s, ms){ toast.textContent = s; toast.style.opacity = 1; clearTimeout(showToast.t); showToast.t = setTimeout(() => { toast.style.opacity = 0; toast.style.pointerEvents = 'none'; toast.style.userSelect = 'none'; }, ms || 2500); }
-const SHARE_BASE = location.origin + location.pathname;
-const shareURL = () => SHARE_BASE + '?arena=' + W + '#' + seed;
+const shareURL = () => {
+  const url = new URL(location.origin + location.pathname);
+  url.searchParams.set('arena', String(W));
+  url.searchParams.set('mode', soloMode);
+  url.hash = seed;
+  return url.href;
+};
 async function copyText(t, ok){
   try { await navigator.clipboard.writeText(t); showToast(ok); }
   catch(e) { showToast(t, 8000); toast.style.pointerEvents = 'auto'; toast.style.userSelect = 'text'; }
@@ -940,7 +948,7 @@ function renderPanel(){
   P('ptitle').textContent=(soloMode==='infinite'?'INFINITE':'CLASSIC')+' · '+(lastEndReason==='crushed'?'CRUSHED':'OUT OF LIVES');
   P('ptime').textContent=lastScore.toLocaleString()+' PTS · '+(soloMode==='infinite'?lastRows+' ROWS':lastBricks+' BRICKS');
   P('pnote').textContent=lastScoreNote;
-  P('pnext').hidden=true;P('pclose').hidden=false;P('pbrag').hidden=true;
+  P('pnext').hidden=false;P('pclose').hidden=false;P('pbrag').hidden=false;
   P('pmodeInf').hidden=false;P('pmodeCls').hidden=false;
   setLinks();
   const ol=P('plist');ol.replaceChildren();emptyBoard('BEST SCORE '+Number(localHighScores[boardId()]||lastScore).toLocaleString()+' · WORLD RANKINGS ↗');
@@ -1000,7 +1008,7 @@ P('nameForm').addEventListener('submit',async e=>{
  }catch(e){showToast('Score name will update with your next run');}}
 });
 P('pnext').onclick=()=>newBoard();
-P('pretry').onclick=()=>newBoard();
+P('pretry').onclick=()=>startBoard();
 P('pclose').onclick=()=>hidePanel();
 function setSoloMode(mode){
  soloMode = mode === 'infinite' ? 'infinite' : 'solo';
@@ -1012,9 +1020,10 @@ P('pmodeInf').onclick=()=>{setSoloMode('infinite');newBoard();};
 P('pmodeCls').onclick=()=>{setSoloMode('solo');newBoard();};
 setSoloMode(soloMode);
 P('pbrag').onclick=()=>{
- const i=boardKey===boardId()?boardRows.findIndex(x=>x.boardKey===boardId()&&x.playerId===myId):-1;
- const t='BRICKS · '+(isDaily()?'Daily '+seed.slice(1):'Seed '+seed)+'\nTime: '+fmtTime(lastTime)+(i>=0?' · World #'+(i+1):'')+'\nBeat me: '+shareURL();
- copyText(t,'Result copied');
+ const t='BRICKS · '+(soloMode==='infinite'?'INFINITE':'CLASSIC')+' · SEED '+seed.toUpperCase()
+  +'\nSCORE '+lastScore+' · '+lastBricks+' BRICKS · '+lastCombo+' MAX COMBO'
+  +'\nCHALLENGE '+shareURL();
+ copyText(t,'Challenge copied');
 };
 P('top').onclick=()=>{location.href='/leaderboard?metric='+(soloMode==='infinite'?'score':'time')+'&arena='+W+'&seed='+encodeURIComponent(seed);};
 function syncPause(){ paused = !P('hudMenu').hidden || !P('panel').hidden; if(paused)brickMusic.clearQueue(); }

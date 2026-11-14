@@ -69,3 +69,8 @@ test("serve prompt, live menu status and results wording",()=>{
  assert.match(multiHtml,/You're out — /);
  assert.match(multiHtml,/\$\("menuStatus"\)\.textContent=""/);
 });
+
+test("Multiplayer Infinite danger follows the viewer's paddle edge",()=>{
+ assert.match(multiHtml,/s\?\.mode==="infinite"&&playing&&me\?\.danger/);
+ assert.match(multiHtml,/sparks\.length<72&&s\.balls\.length<24/);
+});

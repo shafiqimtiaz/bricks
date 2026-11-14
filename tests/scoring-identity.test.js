@@ -68,3 +68,20 @@ test("multiplayer room saves only confirmed named players and records later conf
  assert.deepEqual(calls[4].args.slice(1,4),[ids[1],"Chosen Second",150]);
  assert.equal(calls[4].args[0],"face123-v4-vintage-a360");
 });
+
+test("result sharing preserves seed and mode without sharing player identity",()=>{
+ const source=soloHtml.match(/const shareURL = \(\) => \{[\s\S]*?\n\};/)?.[0];
+ assert.ok(source);
+ const share=new Function("location","W","seed","soloMode",source+"\nreturn shareURL();");
+ for(const mode of ["solo","infinite"]){
+  const url=new URL(share({origin:"https://bricks.shafq.dev",pathname:"/"},360,"abc123",mode));
+  assert.equal(url.searchParams.get("mode"),mode);
+  assert.equal(url.searchParams.get("arena"),"360");
+  assert.equal(url.hash,"#abc123");
+  assert.doesNotMatch(url.href,/player|name|identity|score=/i);
+ }
+ assert.match(soloHtml,/incomingMode === 'solo' \|\| incomingMode === 'infinite'/);
+ assert.match(soloHtml,/P\('pretry'\)\.onclick=\(\)=>startBoard\(\)/);
+ assert.match(soloHtml,/P\('pnext'\)\.onclick=\(\)=>newBoard\(\)/);
+ assert.match(soloHtml,/lastScore\+' · '\+lastBricks/);
+});
