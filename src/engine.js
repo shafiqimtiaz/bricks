@@ -1,4 +1,5 @@
 import { aimVelocity, normalizeBallVelocity, ballSpeed } from "./game-core.js";
+const MITOSIS_MAX_BALLS=2500;
 
 // The one BRICKS simulation, shared by Solo (in the browser) and Multiplayer (in the room).
 // Solo is the one-player case: a single paddle on the bottom edge. Every paddle rule is written in the
@@ -180,7 +181,7 @@ function brickEngine(rng=Math.random){
  }
  function splitOnBrick(b){
   const owner=player(S,b.owner);
-  if(!owner||!(owner.fx.mitosis>0)||S.balls.length>=S.maxBalls)return;
+  if(!owner||!(owner.fx.mitosis>0)||S.balls.length>=MITOSIS_MAX_BALLS)return;
   const clone={x:b.x,y:b.y,vx:0,vy:0,owner:b.owner,source:b.source};
   setVel(S,clone,Math.atan2(b.vx,-b.vy)+(rng()-.5)*.5);
   S.balls.push(clone);
