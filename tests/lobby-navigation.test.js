@@ -12,7 +12,7 @@ test("the multiplayer lobby sends the same host viewport ratio used by Solo", ()
   assert.match(soloHtml, /arenaLayout\(window\.innerWidth \/ window\.innerHeight\)/);
   assert.match(multiHtml, /arenaLayout\(window\.innerWidth\/window\.innerHeight\)/);
   assert.ok(multiHtml.includes('request("",{name:displayName,aspect:window.innerWidth/window.innerHeight,playerId:leaderboardId()})'));
-  assert.match(serverSource, /body:JSON\.stringify\(\{name,aspect:body\.aspect\}\)/);
+  assert.match(serverSource, /body:JSON\.stringify\(\{name,aspect:body\.aspect,playerId:body\.playerId\}\)/);
 });
 
 test("multiplayer court shares Solo's CRT colors and square-brick painter", () => {
