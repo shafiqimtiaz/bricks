@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { arenaLayout, bricks, aimVelocity, normalizeBallVelocity, drawBrickTile, browserCoreSource, soloCoreSource } from "../src/game-core.js";
+import { arenaLayout, squareArena, bricks, aimVelocity, normalizeBallVelocity, drawBrickTile, browserCoreSource, soloCoreSource } from "../src/game-core.js";
 
 import { loadServer, makeRoom, roomInstance, multiHtml as html, serverSource, soloHtml, soloWorker } from "./helpers.js";
 
@@ -47,6 +47,22 @@ test("players choose their own name before saving a score",()=>{
  assert.match(soloHtml,/bricksPlayerNameConfirmed/);
  assert.doesNotMatch(html,/\|\|randomPlayerName\(\)/);
  assert.match(html,/function chosenName\(\)/);
+});
+
+test("a V4 seed preserves its family, palette and symmetry at every player count",()=>{
+ const portrait=arenaLayout(9/16),square=squareArena();
+ for(const seed of ["test001","face99","inside","liminal"]){
+  const boards=[bricks(seed,1,portrait),bricks(seed,2,portrait),bricks(seed,3,square),bricks(seed,4,square)];
+  for(const b of boards){
+   assert.equal(b.generatorVersion,4);
+   assert.equal(b.pattern,boards[0].pattern);
+   assert.equal(b.quad,boards[0].quad);
+   assert.deepEqual(b.palette,boards[0].palette);
+   assert.equal(b.total,[...b.hp].filter(c=>c!=="0"&&c!=="4").length);
+  }
+  assert.ok(boards[1].total<boards[0].total,"multiplayer reserves space for additional paddles");
+  assert.deepEqual(boards[2],boards[3],"the shared square court does not change for a fourth seat");
+ }
 });
 
 test("paddle rotations use Solo's exact angular response and ball speed",()=>{
