@@ -11,8 +11,8 @@ test("plain multiplayer navigation stays in the lobby instead of resuming an old
 test("the multiplayer lobby sends the same host viewport ratio used by Solo", () => {
   assert.match(soloHtml, /arenaLayout\(window\.innerWidth \/ window\.innerHeight\)/);
   assert.match(multiHtml, /arenaLayout\(window\.innerWidth\/window\.innerHeight\)/);
-  assert.ok(multiHtml.includes('request("",{name:displayName,aspect:window.innerWidth/window.innerHeight})'));
-  assert.match(serverSource, /body:JSON\.stringify\(\{name,aspect:body\.aspect\}\)/);
+  assert.ok(multiHtml.includes('request("",{name:displayName,aspect:window.innerWidth/window.innerHeight,playerId:leaderboardId(),confirmed:!!$("playerName").value.trim()})'));
+  assert.match(serverSource, /body:JSON\.stringify\(\{name,aspect:body\.aspect,playerId:body\.playerId,confirmed:body\.confirmed\}\)/);
 });
 
 test("multiplayer court shares Solo's CRT colors and square-brick painter", () => {

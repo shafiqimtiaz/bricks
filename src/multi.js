@@ -7,6 +7,8 @@ const ABC="ABCDEFGHJKLMNPQRSTUVWXYZ23456789",TTL=21600000;
 const JSON_HEADERS={"content-type":"application/json; charset=utf-8","cache-control":"no-store","x-content-type-options":"nosniff"};
 function reply(body,status=200,extra={}){return new Response(JSON.stringify(body),{status,headers:{...JSON_HEADERS,...extra}});}
 function nameOf(v){if(typeof v!=="string")return "";const s=v.trim().normalize("NFKC");return /^[\p{L}\p{N} ._-]{2,24}$/u.test(s)?s:"";}
+const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const stableId=id=>UUID.test(id||"")?id:crypto.randomUUID();
 function cookieFor(code,t){return "brick_room_"+code+"="+t+"; Path=/; Max-Age=21600; HttpOnly; Secure; SameSite=Lax";}
 function authToken(req,code){const raw=req.headers.get("cookie")||"",key="brick_room_"+code+"=";const v=raw.split(";").map(x=>x.trim()).find(x=>x.startsWith(key));return v?v.slice(key.length):"";}
 function newToken(){const bytes=new Uint8Array(24);crypto.getRandomValues(bytes);return Array.from(bytes,x=>x.toString(16).padStart(2,"0")).join("");}
@@ -67,6 +69,20 @@ export class BrickRoom extends DurableObject{
   if(this.room.status!=="waiting"&&!this.room.sim){this.room.status="waiting";this.room.board=this.room.mode==="infinite"?infiniteOpeningBoard(this.room.seed||this.room.code.toLowerCase(),this.room.arena,Math.max(2,this.room.players.length)):bricks(this.room.seed||this.room.code.toLowerCase(),Math.max(2,this.room.players.length),this.room.arena);this.room.generatorVersion=4;}
  }});}
  async save(){if(this.room){this.room.lastActivity=Date.now();await this.ctx.storage.put("room",this.room);}}
+ async recordScores(){
+  const r=this.room;
+  if(!r?.sim||r.status!=="finished"||!this.env?.DB)return;
+  const key=r.seed+"-v4-vintage-a"+r.arena.width;
+  for(const p of r.sim.players){
+   const identity=r.players.find(q=>q.id===p.id),score=Math.round(p.brickScore||0);
+   if(!identity?.confirmed||score<1)continue;
+   const id=identity.leaderboardId||identity.id;
+   await this.env.DB.prepare("INSERT INTO leaderboard_scores(board_key,player_id,player_name,best_score,bricks_broken,best_combo) VALUES(?,?,?,?,?,?) ON CONFLICT(board_key,player_id) DO UPDATE SET best_score=excluded.best_score,bricks_broken=excluded.bricks_broken,best_combo=excluded.best_combo,updated_at=unixepoch() WHERE excluded.best_score>leaderboard_scores.best_score")
+    .bind(key,id,identity.name,score,p.bricksBroken||0,p.maxCombo||0).run();
+   await this.env.DB.prepare("UPDATE leaderboard_scores SET player_name=? WHERE player_id=? AND player_name<>?")
+    .bind(identity.name,id,identity.name).run();
+  }
+ }
  liveIds(){return new Set(this.ctx.getWebSockets().filter(w=>w.readyState===1).map(w=>w.deserializeAttachment()?.id).filter(Boolean));}
  // Marks a player (dis)connected in the lobby roster and in the engine.
  setOnline(p,online){p.online=online;p.offlineAt=online?0:Date.now();const sp=simPlayer(this.room,p.id);if(sp)sp.online=online;}
@@ -133,7 +149,7 @@ export class BrickRoom extends DurableObject{
   if(action==="create"&&req.method==="POST"){
    if(this.room&&Date.now()-(this.room.lastActivity||0)<TTL)return reply({error:"Room already exists"},409);
    const data=await req.json().catch(()=>({})),name=nameOf(data.name);if(!name)return reply({error:"Enter a name of 2–24 characters"},400);
-   const p={id:crypto.randomUUID(),token:newToken(),name,seat:0,pos:.5};
+   const p={id:crypto.randomUUID(),leaderboardId:stableId(data.playerId),confirmed:!!data.confirmed,token:newToken(),name,seat:0,pos:.5};
    const arena=arenaLayout(Number(data.aspect));
    this.room={code,hostId:p.id,players:[p],status:"waiting",round:0,arena,board:bricks(code.toLowerCase(),2,arena),generatorVersion:4,seed:code.toLowerCase(),startedAt:0,lastActivity:Date.now()};assignSides(this.room.players);this.sent=null;
    await this.save();return reply({code,you:p.id},201,{"set-cookie":cookieFor(code,p.token)});
@@ -145,7 +161,7 @@ export class BrickRoom extends DurableObject{
    if(r.status==="playing")return reply({error:"A round is in progress. Try again when it ends."},409);
    if(r.players.length>=4)return reply({error:"This lobby is full (4/4)"},409);
    const body=await req.json().catch(()=>({})),name=nameOf(body.name);if(!name)return reply({error:"Enter a name of 2–24 characters"},400);
-   const player={id:crypto.randomUUID(),token:newToken(),name,seat:0,pos:.5};r.players.push(player);assignSides(r.players);
+   const player={id:crypto.randomUUID(),leaderboardId:stableId(body.playerId),confirmed:!!body.confirmed,token:newToken(),name,seat:0,pos:.5};r.players.push(player);assignSides(r.players);
    if(r.status==="waiting"){r.arena=arenaFor(r.players.length,r.arena);r.board=r.mode==="infinite"?infiniteOpeningBoard(r.seed||r.code.toLowerCase(),r.arena,r.players.length):bricks(r.seed||r.code.toLowerCase(),r.players.length,r.arena);r.generatorVersion=4;this.sent=null;}
    await this.save();this.broadcast();return reply({code,you:player.id,resumed:false},201,{"set-cookie":cookieFor(code,player.token)});
   }
@@ -153,7 +169,7 @@ export class BrickRoom extends DurableObject{
   if(action==="rename"&&req.method==="POST"){
     const body=await req.json().catch(()=>({})),nextName=nameOf(body.name);
     if(!nextName)return reply({error:"Enter a name of 2–24 characters"},400);
-    if(existing.name!==nextName){existing.name=nextName;await this.save();this.broadcast();}
+    if(existing.name!==nextName||!existing.confirmed){existing.name=nextName;existing.confirmed=true;await this.save();this.broadcast();if(r.status==="finished")await this.recordScores();}
     return reply({name:existing.name});
    }
    if(action==="state"&&req.method==="GET")return reply({you:existing.id,state:this.snapshot()});
@@ -238,7 +254,7 @@ export class BrickRoom extends DurableObject{
   if(S.status==="play"&&S.mode==="coop"&&S.players.every(p=>p.out)){S.status="over";S.result={reason:"allout"};S.pups=[];}
   if(S.status!=="play"){
    r.status="finished";r.finishedAt=Date.now();r.result=S.result;
-   this.stopLoop();this.save().catch(e=>console.error("room.finish",e));
+   this.stopLoop();this.save().then(()=>this.recordScores()).catch(e=>console.error("room.finish",e));
   }
  }
 }
@@ -256,7 +272,7 @@ export default {async fetch(request,env){
  if(path==="/api/rooms"&&request.method==="POST"){
   const body=await request.json().catch(()=>({})),name=nameOf(body.name);
   if(!name)return reply({error:"Enter a name of 2–24 characters"},400);
-  for(let i=0;i<6;i++){const id=newCode(),stub=env.ROOMS.get(env.ROOMS.idFromName(id)),response=await stub.fetch(new Request("https://room.internal/api/rooms/"+id+"/create",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({name,aspect:body.aspect})}));if(response.status===409)continue;return response;}
+  for(let i=0;i<6;i++){const id=newCode(),stub=env.ROOMS.get(env.ROOMS.idFromName(id)),response=await stub.fetch(new Request("https://room.internal/api/rooms/"+id+"/create",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({name,aspect:body.aspect,playerId:body.playerId,confirmed:body.confirmed})}));if(response.status===409)continue;return response;}
   return reply({error:"Could not allocate a room"},503);
  }
  const match=/^\/api\/rooms\/([A-Z2-9]{6})\/(join|rename|state|socket|action|leave)$/.exec(path);

@@ -176,7 +176,7 @@ function genLevel(){
     }
   }
   // symmetry: always left-right; some boards four-way (bottom half mirrored to top)
-  quad = rng() < 0.35;
+  quad = random(hash(seed + ':v4:quad'))() < 0.35;
   const copy = (a, b) => { region[b] = region[a]; isWall[b] = isWall[a]; hollow[b] = hollow[a]; };
   for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS / 2; c++) copy(r * COLS + c, r * COLS + COLS - 1 - c);
   if (quad) for (let r = 0; r < ROWS / 2; r++) for (let c = 0; c < COLS; c++) copy((ROWS - 1 - r) * COLS + c, r * COLS + c);

@@ -400,6 +400,16 @@ const NAME_KEY="brick-asmr-player-name",CONFIRMED_KEY="brick-asmr-name-confirmed
 let profileName="";
 try{const saved=localStorage.getItem(NAME_KEY)||"";if(localStorage.getItem(CONFIRMED_KEY)==="1"&&NAME_RE.test(saved))profileName=saved;}catch{}
 function rememberName(name){profileName=name;try{localStorage.setItem(NAME_KEY,name);localStorage.setItem(CONFIRMED_KEY,"1");}catch{}}
+function leaderboardId(){
+ let id="";
+ try{
+  id=localStorage.getItem("brick-asmr-player-id")||"";
+  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)){
+   id=crypto.randomUUID();localStorage.setItem("brick-asmr-player-id",id);
+  }
+ }catch(e){id=crypto.randomUUID();}
+ return id;
+}
 const SENS_KEY='bricksPaddleSensitivity',SENS_VALUES=[.65,1,1.35],SENS_NAMES=['LOW','MID','HIGH'];
 let sensitivityLevel=0;
 try{const saved=localStorage.getItem(SENS_KEY);if(['0','1','2'].includes(saved))sensitivityLevel=Number(saved);}catch(e){}
@@ -539,7 +549,7 @@ function name(){
 let joining=false,lastPromptedRound="";
 function waiting(b){$("create").disabled=$("join").disabled=$("acceptInvite").disabled=b;}
 async function joinRoom(code,displayName){
- const result=await request("/"+code+"/join",{name:displayName});
+ const result=await request("/"+code+"/join",{name:displayName,playerId:leaderboardId(),confirmed:!!$("playerName").value.trim()});
  if($("playerName").value.trim())rememberName(displayName);
  await enter(result.code,result.you);
  return result;
@@ -547,7 +557,7 @@ async function joinRoom(code,displayName){
 async function doCreate(){
  if(joining)return;
  joining=true;waiting(true);error("");
- try{const displayName=name();const result=await request("",{name:displayName,aspect:window.innerWidth/window.innerHeight});if($("playerName").value.trim())rememberName(displayName);await enter(result.code,result.you);}
+ try{const displayName=name();const result=await request("",{name:displayName,aspect:window.innerWidth/window.innerHeight,playerId:leaderboardId(),confirmed:!!$("playerName").value.trim()});if($("playerName").value.trim())rememberName(displayName);await enter(result.code,result.you);}
  catch(e){error(e.message);}finally{waiting(false);joining=false;}
 }
 async function doJoin(){
@@ -1121,6 +1131,8 @@ $("nicknameForm").addEventListener("submit",async event=>{
  try{
   const result=await request("/"+roomCode+"/rename",{name:$("nickname").value.trim()});
   $("playerName").value=result.name;rememberName(result.name);
+  await fetch('/api/leaderboard',{method:'POST',headers:{'content-type':'application/json'},
+   body:JSON.stringify({metric:'rename',playerId:leaderboardId(),name:result.name})}).catch(()=>{});
   const me=state?.players.find(p=>p.id===you);if(me)me.name=result.name;
   $("nicknameForm").hidden=true;render();
  }catch(e){$("nameError").textContent=e.message;}

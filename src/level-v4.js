@@ -43,7 +43,7 @@ export function buildLevelV4(base, seed, players, arena, hashSeed, randomSeed) {
  };
  let reflectorCount=0,entrances=0;
  const used=[];
- const desired=rand(1,players>=3?3:4);
+ const desired=rand(1,4);
  // Different families inherit their original outlines, gaining only short reflective sections.
  for(let feature=0;feature<desired&&runs.length;feature++){
   let selection=null;

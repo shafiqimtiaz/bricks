@@ -14,15 +14,20 @@ async function api(req,env,url){
    try{
     const metric=url.searchParams.get('metric')==='score'?'score':'time';
     const offsetRaw=Number(url.searchParams.get('offset')||0);
+    const playerId=url.searchParams.get('playerId')||'';
+    if(playerId&&!ID.test(playerId))return json({error:'Invalid player'},400);
     if(!Number.isSafeInteger(offsetRaw)||offsetRaw<0||offsetRaw>1000000)return json({error:'Invalid offset'},400);
     const db=env.DB.withSession('first-unconstrained');
     const sql=metric==='score'
      ?"SELECT board_key AS boardKey, player_id AS playerId, player_name AS name, best_score AS score, bricks_broken AS bricksBroken, best_combo AS bestCombo FROM leaderboard_scores WHERE board_key GLOB '*-v4-*' ORDER BY best_score DESC, best_combo DESC, bricks_broken DESC, updated_at ASC, player_id ASC LIMIT 51 OFFSET ?"
-     :"SELECT board_key AS boardKey, player_id AS playerId, player_name AS name, best_ms AS timeMs FROM leaderboard_times WHERE board_key GLOB '*-v4-*' ORDER BY best_ms ASC, updated_at ASC, player_id ASC, board_key ASC LIMIT 51 OFFSET ?";
+     :"SELECT board_key AS boardKey, player_id AS playerId, player_name AS name, best_ms AS timeMs FROM leaderboard_times ORDER BY best_ms ASC, updated_at ASC, player_id ASC, board_key ASC LIMIT 51 OFFSET ?";
     const list=await db.prepare(sql).bind(offsetRaw).all();
-     const count=await db.prepare(metric==='score'?"SELECT COUNT(DISTINCT player_id) AS n FROM leaderboard_scores WHERE board_key GLOB '*-v4-*'":"SELECT COUNT(DISTINCT player_id) AS n FROM leaderboard_times WHERE board_key GLOB '*-v4-*'").first();
+     const count=await db.prepare(metric==='score'?"SELECT COUNT(DISTINCT player_id) AS n FROM leaderboard_scores WHERE board_key GLOB '*-v4-*'":"SELECT COUNT(DISTINCT player_id) AS n FROM leaderboard_times").first();
     const entries=list.results||[];
-    return json({entries:entries.slice(0,50),totalPlayers:count?.n||0,hasMore:entries.length>50,nextOffset:offsetRaw+50});
+    const personal=playerId?await db.prepare(metric==='score'
+     ?"SELECT board_key AS boardKey, player_id AS playerId, player_name AS name, best_score AS score, bricks_broken AS bricksBroken, best_combo AS bestCombo FROM leaderboard_scores WHERE player_id=? ORDER BY best_score DESC LIMIT 1"
+     :"SELECT board_key AS boardKey, player_id AS playerId, player_name AS name, best_ms AS timeMs FROM leaderboard_times WHERE player_id=? ORDER BY best_ms ASC LIMIT 1").bind(playerId).first():null;
+    return json({entries:entries.slice(0,50),totalPlayers:count?.n||0,hasMore:entries.length>50,nextOffset:offsetRaw+50,personal});
    }catch(e){console.error('world leaderboard GET',e);return json({error:'Leaderboard unavailable'},503);}
   }
   const key=url.searchParams.get('key')||'';if(!KEY.test(key))return json({error:'Invalid challenge'},400);
@@ -38,6 +43,14 @@ async function api(req,env,url){
   let input;try{const raw=await req.text();if(raw.length>2048)return json({error:'Payload too large'},413);input=JSON.parse(raw);}catch{return json({error:'Invalid JSON'},400);}
   const name=typeof input?.name==='string'?input.name.trim().normalize('NFKC'):'';
   const scoreRun=input?.metric==='score';
+  if(input?.metric==='rename'){
+   if(!ID.test(input?.playerId||'')||!NAME.test(name))return json({error:'Invalid name'},400);
+   try{
+    await env.DB.prepare('UPDATE leaderboard_times SET player_name=? WHERE player_id=?').bind(name,input.playerId).run();
+    await env.DB.prepare('UPDATE leaderboard_scores SET player_name=? WHERE player_id=?').bind(name,input.playerId).run();
+    return json({renamed:true});
+   }catch(e){console.error('leaderboard rename',e);return json({error:'Rename failed'},503);}
+  }
   if(!KEY.test(input?.key||'')||!ID.test(input?.playerId||'')||!NAME.test(name))return json({error:'Invalid result'},400);
   if(scoreRun){
    if(!Number.isSafeInteger(input.score)||input.score<1||input.score>1000000000||

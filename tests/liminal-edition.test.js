@@ -78,7 +78,7 @@ test("Best Time and Best Score use separate world-ranked tables",async()=>{
   assert.equal(response.status,200);
   const data=await response.json();assert.deepEqual(data.entries,[]);
  }
- assert.ok(sqls.some(s=>s.includes("FROM leaderboard_times WHERE board_key GLOB '*-v4-*' ORDER BY best_ms ASC")));
+ assert.ok(sqls.some(s=>s.includes("FROM leaderboard_times ORDER BY best_ms ASC")));
  assert.ok(sqls.some(s=>s.includes("FROM leaderboard_scores WHERE board_key GLOB '*-v4-*' ORDER BY best_score DESC")));
 });
 

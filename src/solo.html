@@ -209,6 +209,10 @@ html,body,body *{font-family:'Press Start 2P',ui-monospace,monospace!important}
 @keyframes crtGlassRoll{from{background-position:0 -25%}to{background-position:0 125%}}
 @media(prefers-reduced-motion:reduce){#crt{display:block!important;animation:none!important}#crt::after{animation:none!important}}
 
+#hud #hudMenu{max-height:calc(var(--u)*92);overflow-y:auto;overscroll-behavior:contain}
+#hud #hudMenu .menuIdentity{padding:calc(var(--u)*2.3);border-bottom:1px solid #607f6a55;color:#d7e0dc;text-wrap:balance}
+#hud #hudMenu .menuIdentity strong{display:block;font-size:clamp(10px,calc(var(--u)*2.2),14px);letter-spacing:.04em}
+#hud #hudMenu .menuIdentity small{display:block;margin-top:calc(var(--u)*2);font-size:clamp(7px,calc(var(--u)*1.5),10px);line-height:1.75;color:#a5b3a7;text-transform:uppercase}
 #nameInput{font-size:10px;line-height:1.7;letter-spacing:.01em}
 #nameError{font-size:8px;line-height:1.8}
 #nameModal,#nameForm{border-radius:2px}
@@ -224,6 +228,7 @@ html,body,body *{font-family:'Press Start 2P',ui-monospace,monospace!important}
    <button id="hudMenuToggle" type="button" aria-label="Open menu" aria-expanded="false">☰</button>
    <div id="hudBar" aria-hidden="true"><i id="hudFill"></i></div>
    <div id="hudMenu" hidden>
+    <div class="menuIdentity"><strong>BRICKS</strong><small>Brick Rooms Induce Claustrophobia. Keep Smiling.</small></div>
     <div id="hudStatus" role="status"></div>
     <button id="soundToggle" type="button" aria-pressed="true">SOUND ON</button>
     <button id="sensitivityToggle" type="button">SENS LOW</button>
@@ -517,7 +522,7 @@ function react(e){
         crushed = true; showMsg('CRUSHED!\ntap to restart');
         flashW = .8; shake = 12; vib([80, 40, 160]); [0, -3, -7, -12].forEach((s, j) => setTimeout(() => { notesThisFrame = 0; blip(110 * Math.pow(2, s / 12), .3, .3, 'square'); }, j * 110));
       } else { showMsg('out of lives\ntap to restart'); flashW = .5; }
-      if (soloMode === 'infinite') onInfiniteOver(e.reason);
+      onRunOver(e.reason);
       break;
   }
 }
@@ -821,7 +826,7 @@ async function loadBoard(){
  }catch(e){if(seq===boardSeq)boardStatus='error';}
  if(seq===boardSeq)renderPanel();
 }
-async function onInfiniteOver(reason){
+async function onRunOver(reason){
   lastRows=S.descent?S.descent.rows:0;
   lastScore=Math.round(me.brickScore);
   lastBricks=me.bricksBroken;
@@ -845,7 +850,11 @@ async function onInfiniteOver(reason){
 }
 async function onClear(ms){
  const key=boardId(),old=myBest(key);
- lastTime=ms;
+ lastTime=ms;lastScore=Math.round(me.brickScore);lastBricks=me.bricksBroken;lastCombo=me.maxCombo;
+ if(lastScore>Number(localHighScores[key]||0)){
+  localHighScores[key]=lastScore;
+  try{localStorage.setItem('brick-asmr-high-scores',JSON.stringify(localHighScores));}catch(e){}
+ }
  const improved=old===undefined||ms<old;
  lastNote=improved?(old===undefined?'first clear!':'new best! · was '+fmtTime(old)):'best '+fmtTime(old);
  if(improved){localBest[key]=ms;try{localStorage.setItem('brick-asmr-best',JSON.stringify(localBest));}catch(e){}}
@@ -857,6 +866,13 @@ async function onClear(ms){
   if(!res.ok)throw Error('Rejected');
   if(key===boardId()){lastNote+=' · saved worldwide';await loadBoard();}
  }catch(e){if(key===boardId()){lastNote+=' · saved on device';boardStatus='error';renderPanel();}}
+ if(lastScore>0)try{
+  const res=await fetch('/api/leaderboard',{method:'POST',headers:{'content-type':'application/json'},
+   body:JSON.stringify({metric:'score',key,playerId:myId,name:myName,score:lastScore,bricksBroken:lastBricks,bestCombo:lastCombo})});
+  if(!res.ok)throw Error('Rejected');
+  lastNote+=' · score saved worldwide';
+ }catch(e){lastNote+=' · score saved on device';}
+ if(panelMode==='clear')renderPanel();
 }
 function showPanel(mode){panelMode=mode;P('panel').hidden=false;setLinks();renderPanel();if(mode!=='over')loadBoard();syncPause();if(!myName&&(mode==='clear'||mode==='over'&&lastScore>0))openNameModal(true);}
 function hidePanel(){panelMode=null;P('panel').hidden=true;syncPause();}
@@ -864,8 +880,8 @@ function emptyBoard(note){const li=document.createElement('li');li.className='em
 function renderPanel(){
  if(!panelMode)return;
  if(panelMode==='over'){
-  P('ptitle').textContent='INFINITE · '+(lastEndReason==='crushed'?'CRUSHED':'OUT OF LIVES');
-  P('ptime').textContent=lastScore.toLocaleString()+' PTS · '+lastRows+' ROWS';
+  P('ptitle').textContent=(soloMode==='infinite'?'INFINITE':'CLASSIC')+' · '+(lastEndReason==='crushed'?'CRUSHED':'OUT OF LIVES');
+  P('ptime').textContent=lastScore.toLocaleString()+' PTS · '+(soloMode==='infinite'?lastRows+' ROWS':lastBricks+' BRICKS');
   P('pnote').textContent=lastScoreNote;
   P('pnext').hidden=true;P('pclose').hidden=false;P('pbrag').hidden=true;
   P('pmodeInf').hidden=false;P('pmodeCls').hidden=false;
@@ -915,6 +931,7 @@ P('nameForm').addEventListener('submit',async e=>{
  if(!/^[\p{L}\p{N} _.-]{2,24}$/u.test(name)){P('nameError').textContent='Use 2–24 letters, numbers, spaces, _ . or -';return;}
  myName=name;try{localStorage.setItem('brick-asmr-player-name',name);localStorage.setItem('brick-asmr-name-confirmed','1');}catch(e){}
  closeNameModal();setLinks();showToast('Leaderboard name saved');
+ try{const res=await fetch('/api/leaderboard',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({metric:'rename',playerId:myId,name})});if(!res.ok)throw Error('Rename failed');}catch(e){showToast('Name saved locally; world rankings unavailable');}
  const saved=Object.entries(localBest).find(([key,time])=>/^[a-z0-9]{1,16}-v4-(clean|vintage|vapor)(?:-a\d{3,4})?$/.test(key)&&Number.isSafeInteger(time)&&time>0);
  if(saved){try{const res=await fetch('/api/leaderboard',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:saved[0],playerId:myId,name:myName,timeMs:saved[1]})});if(!res.ok)throw Error('Not saved');await loadBoard();}catch(e){showToast('Name saved locally; world rankings unavailable');}}
  const savedScore=Object.entries(localHighScores).find(([key,score])=>/^[a-z0-9]{1,16}-v4-(clean|vintage|vapor)(?:-a\d{3,4})?$/.test(key)&&Number.isSafeInteger(score)&&score>0);
