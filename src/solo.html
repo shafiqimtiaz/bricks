@@ -802,16 +802,14 @@ let panelMode=null,lastTime=0,lastNote='',boardRows=[],boardKey='',boardStatus='
 try{
  myId=localStorage.getItem('brick-asmr-player-id')||'';
  if(!/^[0-9a-f-]{36}$/i.test(myId)){myId=crypto.randomUUID();localStorage.setItem('brick-asmr-player-id',myId);}
- myName=localStorage.getItem('brick-asmr-player-name')||'';
+ myName=localStorage.getItem('brick-asmr-name-confirmed')==='1'?(localStorage.getItem('brick-asmr-player-name')||''):'';
  localBest=JSON.parse(localStorage.getItem('brick-asmr-best')||'{}')||{};
  localHighScores=JSON.parse(localStorage.getItem('brick-asmr-high-scores')||'{}')||{};
 }catch(e){myId=crypto.randomUUID();}
-if(!/^[\p{L}\p{N} _.-]{2,24}$/u.test(myName)){
- myName=randomPlayerName();
- try{localStorage.setItem('brick-asmr-player-name',myName);}catch(e){}
-}
+if(!/^[\p{L}\p{N} _.-]{2,24}$/u.test(myName))myName='';
+const previewName=myName||randomPlayerName();
 function myBest(key){return Number.isFinite(localBest[key])?localBest[key]:undefined;}
-function setLinks(){P('pfull').href='/leaderboard?metric='+(panelMode==='over'?'score':'time');P('pname').textContent='Player: '+myName+' ✎';}
+function setLinks(){P('pfull').href='/leaderboard?metric='+(panelMode==='over'?'score':'time');P('pname').textContent='Player: '+(myName||previewName)+' ✎';}
 async function loadBoard(){
  const seq=++boardSeq;boardKey=boardId();boardStatus='loading';boardRows=[];renderPanel();
  try{
@@ -836,7 +834,7 @@ async function onInfiniteOver(reason){
   }
   lastScoreNote='SCORE '+lastScore+' · '+lastBricks+' BRICKS · '+lastCombo+' MAX COMBO';
   showPanel('over');
-  if(lastScore<1)return;
+  if(lastScore<1||!myName)return;
   try{
    const res=await fetch('/api/leaderboard',{method:'POST',headers:{'content-type':'application/json'},
     body:JSON.stringify({metric:'score',key,playerId:myId,name:myName,score:lastScore,bricksBroken:lastBricks,bestCombo:lastCombo})});
@@ -852,6 +850,7 @@ async function onClear(ms){
  lastNote=improved?(old===undefined?'first clear!':'new best! · was '+fmtTime(old)):'best '+fmtTime(old);
  if(improved){localBest[key]=ms;try{localStorage.setItem('brick-asmr-best',JSON.stringify(localBest));}catch(e){}}
  showPanel('clear');
+ if(!myName)return;
  // Infinite runs never clear, and endless scores stay out of the world rankings.
  if(soloMode!=="infinite")try{
   const res=await fetch('/api/leaderboard',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key,playerId:myId,name:myName,timeMs:ms})});
@@ -859,7 +858,7 @@ async function onClear(ms){
   if(key===boardId()){lastNote+=' · saved worldwide';await loadBoard();}
  }catch(e){if(key===boardId()){lastNote+=' · saved on device';boardStatus='error';renderPanel();}}
 }
-function showPanel(mode){panelMode=mode;P('panel').hidden=false;setLinks();renderPanel();if(mode!=='over')loadBoard();syncPause();}
+function showPanel(mode){panelMode=mode;P('panel').hidden=false;setLinks();renderPanel();if(mode!=='over')loadBoard();syncPause();if(!myName&&(mode==='clear'||mode==='over'&&lastScore>0))openNameModal(true);}
 function hidePanel(){panelMode=null;P('panel').hidden=true;syncPause();}
 function emptyBoard(note){const li=document.createElement('li');li.className='empty';li.textContent=note;P('plist').append(li);}
 function renderPanel(){
@@ -892,9 +891,13 @@ function renderPanel(){
   li.append(a,b,c);ol.append(li);
  }
 }
-P('pname').onclick=()=>{
- P('nameInput').value=myName;P('nameError').textContent='';P('nameModal').hidden=false;P('nameInput').focus();
-};
+function openNameModal(forScore=false){
+ P('nameTitle').textContent=forScore?'SAVE YOUR SCORE':'PLAYER NAME';
+ P('nameCancel').textContent=forScore?'LATER':'CANCEL';
+ P('nameInput').value=myName;P('nameInput').placeholder=previewName;
+ P('nameError').textContent='';P('nameModal').hidden=false;P('nameInput').focus();
+}
+P('pname').onclick=()=>openNameModal();
 function closeNameModal(){P('nameModal').hidden=true;P('pname').focus();}
 P('nameCancel').onclick=closeNameModal;
 P('nameModal').addEventListener('pointerdown',e=>{if(e.target===P('nameModal'))closeNameModal();});
@@ -910,7 +913,7 @@ P('nameForm').addEventListener('submit',async e=>{
  e.preventDefault();
  const name=P('nameInput').value.trim().normalize('NFKC');
  if(!/^[\p{L}\p{N} _.-]{2,24}$/u.test(name)){P('nameError').textContent='Use 2–24 letters, numbers, spaces, _ . or -';return;}
- myName=name;try{localStorage.setItem('brick-asmr-player-name',name)}catch(e){}
+ myName=name;try{localStorage.setItem('brick-asmr-player-name',name);localStorage.setItem('brick-asmr-name-confirmed','1');}catch(e){}
  closeNameModal();setLinks();showToast('Leaderboard name saved');
  const saved=Object.entries(localBest).find(([key,time])=>/^[a-z0-9]{1,16}-v4-(clean|vintage|vapor)(?:-a\d{3,4})?$/.test(key)&&Number.isSafeInteger(time)&&time>0);
  if(saved){try{const res=await fetch('/api/leaderboard',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:saved[0],playerId:myId,name:myName,timeMs:saved[1]})});if(!res.ok)throw Error('Not saved');await loadBoard();}catch(e){showToast('Name saved locally; world rankings unavailable');}}
