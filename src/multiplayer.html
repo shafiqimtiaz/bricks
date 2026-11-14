@@ -1039,23 +1039,32 @@ function pointer(event,previousX){
  const dx=(event.clientX-previousX)/width*sensitivity();
  if(dx)send(localPos+dx);
 }
-// The lower strip is a relative trackpad; the court remains reserved for serving.
+// Each control zone owns its own pointer, so aim and paddle can move together.
 for(const canvas of [cv,gcv]){
  canvas.addEventListener("pointerdown",event=>{
   if(state?.status!=="playing"||!$("hudMenu").hidden)return;
-  audioInit();
   const y=boardPointer(event).y;
-  if(y>=viewH-90){controlDrag={id:event.pointerId,x:event.clientX};drag=null;}
-  else if(holdingServe()){drag={id:event.pointerId,x:event.clientX,width:canvas.getBoundingClientRect().width,aim:aimAng,moved:false};controlDrag=null;}
-  else return;
+  if(y>=viewH-90){
+   if(controlDrag)return;
+   controlDrag={id:event.pointerId,x:event.clientX};
+  }else{
+   if(drag)return;
+   drag={id:event.pointerId,x:event.clientX,width:canvas.getBoundingClientRect().width,aim:aimAng,moved:false};
+  }
+  audioInit();
   try{canvas.setPointerCapture(event.pointerId);}catch(_){}
  });
  canvas.addEventListener("pointermove",event=>{
-  if(controlDrag?.id===event.pointerId){pointer(event,controlDrag.x);controlDrag.x=event.clientX;}
-  else if(drag?.id===event.pointerId){
+  if(controlDrag?.id===event.pointerId){
+   pointer(event,controlDrag.x);
+   controlDrag.x=event.clientX;
+  }else if(drag?.id===event.pointerId){
    const dx=event.clientX-drag.x;
    if(Math.abs(dx)>8)drag.moved=true;
    if(drag.moved)setAim(aimDragAngle(drag.aim,dx,drag.width));
+  }else if(event.pointerType==="mouse"&&!event.buttons&&!drag&&state?.status==="playing"&&$("hudMenu").hidden){
+   const point=boardPointer(event);
+   if(point.y<viewH-90)setAim((point.x/viewW-.5)*2.3);
   }
  });
  canvas.addEventListener("pointerup",event=>{
