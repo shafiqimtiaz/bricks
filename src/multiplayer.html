@@ -1124,6 +1124,8 @@ $("nicknameForm").addEventListener("submit",async event=>{
  try{
   const result=await request("/"+roomCode+"/rename",{name:$("nickname").value.trim()});
   $("playerName").value=result.name;rememberName(result.name);
+  await fetch('/api/leaderboard',{method:'POST',headers:{'content-type':'application/json'},
+   body:JSON.stringify({metric:'rename',playerId:leaderboardId(),name:result.name})}).catch(()=>{});
   const me=state?.players.find(p=>p.id===you);if(me)me.name=result.name;
   $("nicknameForm").hidden=true;render();
  }catch(e){$("nameError").textContent=e.message;}
