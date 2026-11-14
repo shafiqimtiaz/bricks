@@ -164,7 +164,7 @@ body{text-shadow:0 0 5px #b8eadb19}
 (()=>{
 const P=id=>document.getElementById(id);
 const params=new URLSearchParams(location.search);
-let metric=params.get('metric')==='score'?'score':'time';
+let metric=params.get('metric')==='time'?'time':'score';
 let localScore={};try{localScore=JSON.parse(localStorage.getItem('brick-asmr-high-scores')||'{}')||{};}catch{}
 const seed=/^[a-z0-9]{1,16}$/.test(params.get('seed')||'')?params.get('seed'):'d'+new Date().toISOString().slice(0,10).replace(/-/g,'');
 const arenaParam=params.get('arena')||'';
@@ -191,7 +191,7 @@ updateMetricLabels();
 const cell=(cls,text)=>{const n=document.createElement('div');n.className=cls;n.textContent=text;return n};
 function boardLabel(key){
  const m=/^([a-z0-9]+?)(?:-\d+)?-v4-(?:clean|vintage|vapor)(?:-a\d{3,4})?$/.exec(key||'');
- if(!m)return 'BOARD '+String(key||'').replace(/-(?:clean|vintage|vapor)(?:-a\d{3,4})?$/,'').toUpperCase();
+ if(!m)return 'ARCHIVE · '+String(key||'').replace(/-(?:clean|vintage|vapor)(?:-a\d{3,4})?$/,'').toUpperCase();
  const label=m[1].startsWith('d20')?'DAILY '+m[1].slice(5):'SEED '+m[1].toUpperCase();
  return label;
 }
@@ -203,11 +203,18 @@ function empty(title){
  P('rows').append(shell);
 }
 let offset=0,hasMore=false,loading=false,run=0;
-function renderRows(entries,first){
+function renderRows(entries,first,personal){
  if(first){
   P('rows').replaceChildren();
   P('fastest').textContent=entries.length?metricValue(entries[0]):(metric==='score'?'--':'--:--');
   if(!entries.length){empty(metric==='score'?'NO SCORES':'NO TIMES');return;}
+ }
+ if(first&&personal&&!entries.some(r=>r.playerId===playerId)){
+  const mine=cell('entry mine',''),label=cell('name',personal.name);
+  label.append(cell('board-seed',boardLabel(personal.boardKey)));
+  label.append(cell('me-tag','YOU'));
+  mine.append(cell('rank','YOU'),label,cell('value',metricValue(personal)));
+  P('rows').append(mine);
  }
  for(const [i,r] of entries.entries()){
   const rank=offset+i+1;
@@ -230,12 +237,13 @@ async function load(reset=false){
  }
  P('refresh').disabled=true;P('more').disabled=true;P('updated').textContent='◌ SYNC';
  try{
-  const res=await fetch('/api/leaderboard?scope=world&offset='+offset+'&metric='+metric,{cache:'no-store'});
+  const res=await fetch('/api/leaderboard?scope=world&offset='+offset+'&metric='+metric+'&playerId='+encodeURIComponent(playerId),{cache:'no-store'});
   if(!res.ok)throw Error('Network error');
   const data=await res.json();
   if(call!==run)return;
   const entries=Array.isArray(data.entries)?data.entries:[];
-  renderRows(entries,offset===0);
+  renderRows(entries,offset===0,data.personal||null);
+  if(data.personal)P('mine').textContent=metricValue(data.personal);
   P('players').textContent=Number(data.totalPlayers||0).toLocaleString();
   offset+=entries.length;
   hasMore=Boolean(data.hasMore);
