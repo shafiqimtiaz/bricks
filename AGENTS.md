@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Agent notes for bricks-asmr (Bricks ASMR: a brick-breaker game served from Cloudflare Workers).
+Agent notes for BRICKS (a a brick-breaker game served from Cloudflare Workers).
 
 - Main deploys live to bricks.shafq.dev. Develop on a short-lived branch; run QA locally and in a pull request before merging to main. Never deploy a failing change.
 - `npm test` runs the suite (`node --test`).
