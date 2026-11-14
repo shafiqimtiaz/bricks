@@ -37,6 +37,12 @@ try {
   await waitFor(host, () => /^[A-Z2-9]{6}$/.test(document.querySelector("#roomCode")?.textContent || ""));
   const code = (await host.locator("#roomCode").textContent()).trim();
   assert.equal(await host.locator("#currentName").textContent(), "QA Host");
+  const hostedArena = await host.evaluate(async code => {
+    const response = await fetch("/api/multiplayer/rooms/" + code + "/state");
+    return (await response.json()).state.arena;
+  }, code);
+  assert.equal(hostedArena.width, Math.round(640 * 390 / 844), "Host screen ratio determines multiplayer world");
+  assert.equal(await host.locator("#room").isVisible(), true, "Host stays in waiting lobby");
 
   const guestContext = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const guest = await pageAt(guestContext, `/multiplayer/${code}`);
@@ -47,6 +53,8 @@ try {
   await waitFor(guest, () => document.querySelector("#currentName")?.textContent === "QA Guest");
   await waitFor(host, () => document.querySelector("#playerCount")?.textContent?.includes("2 PADDLES"));
   await waitFor(guest, () => document.querySelector("#playerCount")?.textContent?.includes("2 PADDLES"));
+  assert.equal(await host.locator("#statusText").textContent(), "MULTIPLAYER LOBBY", "Two connected players remain in lobby until host starts");
+  assert.equal(await host.locator("#start").isEnabled(), true, "Host can explicitly start");
   await host.locator("#start").click();
   await waitFor(host, () => document.querySelector("#statusText")?.textContent === "LIVE MATCH");
   await waitFor(guest, () => document.querySelector("#statusText")?.textContent === "LIVE MATCH");
@@ -54,6 +62,10 @@ try {
   assert.equal(await guest.locator("#slot0.me").count(), 1, "Guest views their paddle at bottom");
   assert.equal(await host.locator("#c").count(), 1, "Host has one shared board");
   assert.equal(await guest.locator("#c").count(), 1, "Guest has one shared board");
+  const reopenedLobby = await pageAt(hostContext, "/multiplayer");
+  assert.equal(await reopenedLobby.locator("#intro").isVisible(), true, "Entering multiplayer shows the lobby with an active room cookie");
+  assert.equal(await reopenedLobby.locator("#room").isVisible(), false, "No silent room resume");
+  assert.equal(new URL(reopenedLobby.url()).pathname, "/multiplayer");
   await host.locator("canvas:visible").first().click({ position: { x: 30, y: 100 } });
   await guest.locator("canvas:visible").first().click({ position: { x: 30, y: 100 } });
   await host.keyboard.press("ArrowRight");

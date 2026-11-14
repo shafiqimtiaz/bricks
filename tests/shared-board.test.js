@@ -234,7 +234,7 @@ test("room-specific invitations take priority, legacy query invites do not join"
  assert.deepEqual(events,[]);
  const saved={getItem:()=> "ZYX987"};
  initialize(location,saved,code=>events.push(["invite",code]),resume);
- assert.deepEqual(events,[["resume","ZYX987"]]);
+ assert.deepEqual(events,[], "Plain lobby navigation must not auto-resume a saved room");
  assert.doesNotMatch(client,/searchParams\.get\(["']room["']\)|randomGuestName\(|autoJoin\(/);
  assert.match(html,/id="acceptInvite"/);
 });
@@ -514,13 +514,13 @@ test("rapid repeated join or create clicks cannot reserve duplicate players", as
  let calls=0;
  const elements={create:{},join:{},acceptInvite:{},joinCode:{value:"ABCDE2"}};
  const storage={setItem(){}};
- const createFlow=new Function("$","request","enter","localStorage","error","name",
+ const createFlow=new Function("$","request","enter","localStorage","error","name","window",
   client.slice(from,to)+"return {doCreate,doJoin,isJoining:()=>joining};");
  const flow=createFlow(id=>elements[id],async (path,body)=>{
   calls++;
   await new Promise(resolve=>{release=resolve;});
   return {code:"ABCDE2",you:"new-player",resumed:false};
- },async()=>{},storage,()=>{},()=>"PlayerOne");
+ },async()=>{},storage,()=>{},()=>"PlayerOne",{innerWidth:390,innerHeight:844});
  const first=flow.doJoin();
  assert.equal(flow.isJoining(),true);
  await flow.doJoin();

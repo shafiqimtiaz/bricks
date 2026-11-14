@@ -256,7 +256,7 @@ export default {async fetch(request,env){
  if(path==="/api/rooms"&&request.method==="POST"){
   const body=await request.json().catch(()=>({})),name=nameOf(body.name);
   if(!name)return reply({error:"Enter a name of 2–18 characters"},400);
-  for(let i=0;i<6;i++){const id=newCode(),stub=env.ROOMS.get(env.ROOMS.idFromName(id)),response=await stub.fetch(new Request("https://room.internal/api/rooms/"+id+"/create",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({name})}));if(response.status===409)continue;return response;}
+  for(let i=0;i<6;i++){const id=newCode(),stub=env.ROOMS.get(env.ROOMS.idFromName(id)),response=await stub.fetch(new Request("https://room.internal/api/rooms/"+id+"/create",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({name,aspect:body.aspect})}));if(response.status===409)continue;return response;}
   return reply({error:"Could not allocate a room"},503);
  }
  const match=/^\/api\/rooms\/([A-Z2-9]{6})\/(join|rename|state|socket|action|leave)$/.exec(path);
