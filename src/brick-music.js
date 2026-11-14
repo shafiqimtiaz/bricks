@@ -89,7 +89,7 @@ export function createBrickMusic() {
     if (!soundKit) return false;
     const now = soundKit.context.currentTime;
     const delay = Math.max(0, nextAt - now);
-    if (delay > .15) return false;
+    if (delay > .15 + 1e-9) return false;
     const note = next();
     soundKit.blip(note.frequency, note.volume, note.duration, note.wave, delay, pan);
     nextAt = now + delay + tune.step;
