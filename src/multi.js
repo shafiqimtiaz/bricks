@@ -6,7 +6,7 @@ import { withPwa } from "./pwa.js";
 const ABC="ABCDEFGHJKLMNPQRSTUVWXYZ23456789",TTL=21600000;
 const JSON_HEADERS={"content-type":"application/json; charset=utf-8","cache-control":"no-store","x-content-type-options":"nosniff"};
 function reply(body,status=200,extra={}){return new Response(JSON.stringify(body),{status,headers:{...JSON_HEADERS,...extra}});}
-function nameOf(v){if(typeof v!=="string")return "";const s=v.trim().normalize("NFKC");return /^[\p{L}\p{N} ._-]{2,18}$/u.test(s)?s:"";}
+function nameOf(v){if(typeof v!=="string")return "";const s=v.trim().normalize("NFKC");return /^[\p{L}\p{N} ._-]{2,24}$/u.test(s)?s:"";}
 function cookieFor(code,t){return "brick_room_"+code+"="+t+"; Path=/; Max-Age=21600; HttpOnly; Secure; SameSite=Lax";}
 function authToken(req,code){const raw=req.headers.get("cookie")||"",key="brick_room_"+code+"=";const v=raw.split(";").map(x=>x.trim()).find(x=>x.startsWith(key));return v?v.slice(key.length):"";}
 function newToken(){const bytes=new Uint8Array(24);crypto.getRandomValues(bytes);return Array.from(bytes,x=>x.toString(16).padStart(2,"0")).join("");}
@@ -132,7 +132,7 @@ export class BrickRoom extends DurableObject{
   if(!/^[A-Z2-9]{6}$/.test(code||""))return reply({error:"Invalid room code"},400);
   if(action==="create"&&req.method==="POST"){
    if(this.room&&Date.now()-(this.room.lastActivity||0)<TTL)return reply({error:"Room already exists"},409);
-   const data=await req.json().catch(()=>({})),name=nameOf(data.name);if(!name)return reply({error:"Enter a name of 2–18 characters"},400);
+   const data=await req.json().catch(()=>({})),name=nameOf(data.name);if(!name)return reply({error:"Enter a name of 2–24 characters"},400);
    const p={id:crypto.randomUUID(),token:newToken(),name,seat:0,pos:.5};
    const arena=arenaLayout(Number(data.aspect));
    this.room={code,hostId:p.id,players:[p],status:"waiting",round:0,arena,board:bricks(code.toLowerCase(),2,arena),generatorVersion:4,seed:code.toLowerCase(),startedAt:0,lastActivity:Date.now()};assignSides(this.room.players);this.sent=null;
@@ -144,7 +144,7 @@ export class BrickRoom extends DurableObject{
    if(existing)return reply({code,you:existing.id,resumed:true},200,{"set-cookie":cookieFor(code,existing.token)});
    if(r.status==="playing")return reply({error:"A round is in progress. Try again when it ends."},409);
    if(r.players.length>=4)return reply({error:"This lobby is full (4/4)"},409);
-   const body=await req.json().catch(()=>({})),name=nameOf(body.name);if(!name)return reply({error:"Enter a name of 2–18 characters"},400);
+   const body=await req.json().catch(()=>({})),name=nameOf(body.name);if(!name)return reply({error:"Enter a name of 2–24 characters"},400);
    const player={id:crypto.randomUUID(),token:newToken(),name,seat:0,pos:.5};r.players.push(player);assignSides(r.players);
    if(r.status==="waiting"){r.arena=arenaFor(r.players.length,r.arena);r.board=r.mode==="infinite"?infiniteOpeningBoard(r.seed||r.code.toLowerCase(),r.arena,r.players.length):bricks(r.seed||r.code.toLowerCase(),r.players.length,r.arena);r.generatorVersion=4;this.sent=null;}
    await this.save();this.broadcast();return reply({code,you:player.id,resumed:false},201,{"set-cookie":cookieFor(code,player.token)});
@@ -152,7 +152,7 @@ export class BrickRoom extends DurableObject{
   if(!existing)return reply({error:"Join the lobby first"},401);
   if(action==="rename"&&req.method==="POST"){
     const body=await req.json().catch(()=>({})),nextName=nameOf(body.name);
-    if(!nextName)return reply({error:"Enter a name of 2–18 characters"},400);
+    if(!nextName)return reply({error:"Enter a name of 2–24 characters"},400);
     if(existing.name!==nextName){existing.name=nextName;await this.save();this.broadcast();}
     return reply({name:existing.name});
    }
@@ -255,7 +255,7 @@ export default {async fetch(request,env){
  if(request.method==="POST"&&Number(request.headers.get("content-length")||0)>1024)return reply({error:"Request too large"},413);
  if(path==="/api/rooms"&&request.method==="POST"){
   const body=await request.json().catch(()=>({})),name=nameOf(body.name);
-  if(!name)return reply({error:"Enter a name of 2–18 characters"},400);
+  if(!name)return reply({error:"Enter a name of 2–24 characters"},400);
   for(let i=0;i<6;i++){const id=newCode(),stub=env.ROOMS.get(env.ROOMS.idFromName(id)),response=await stub.fetch(new Request("https://room.internal/api/rooms/"+id+"/create",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({name,aspect:body.aspect})}));if(response.status===409)continue;return response;}
   return reply({error:"Could not allocate a room"},503);
  }
