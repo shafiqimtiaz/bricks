@@ -1,5 +1,7 @@
 # BRICKS
 
+*Brick Rooms Induce Claustrophobia. Keep Smiling.*
+
 A browser-based brick-breaker with Solo mode, a global leaderboard, and a live, single-board multiplayer mode.
 
 **Play:** https://bricks.shafq.dev  
