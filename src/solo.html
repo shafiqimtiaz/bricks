@@ -1,7 +1,7 @@
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,interactive-widget=resizes-visual">
-<title>Bricks ASMR · Single Player</title>
+<title>BRICKS · Single Player</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&amp;display=swap" rel="stylesheet">
 <style>
@@ -936,7 +936,7 @@ P('pmodeCls').onclick=()=>{setSoloMode('solo');newBoard();};
 setSoloMode(soloMode);
 P('pbrag').onclick=()=>{
  const i=boardKey===boardId()?boardRows.findIndex(x=>x.boardKey===boardId()&&x.playerId===myId):-1;
- const t='BRICKS ASMR · '+(isDaily()?'Daily '+seed.slice(1):'Seed '+seed)+'\nTime: '+fmtTime(lastTime)+(i>=0?' · World #'+(i+1):'')+'\nBeat me: '+shareURL();
+ const t='BRICKS · '+(isDaily()?'Daily '+seed.slice(1):'Seed '+seed)+'\nTime: '+fmtTime(lastTime)+(i>=0?' · World #'+(i+1):'')+'\nBeat me: '+shareURL();
  copyText(t,'Result copied');
 };
 P('top').onclick=()=>{location.href='/leaderboard?metric='+(soloMode==='infinite'?'score':'time');};
