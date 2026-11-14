@@ -356,7 +356,7 @@ html,body,body *{font-family:'Press Start 2P',ui-monospace,monospace!important}
     <a href="/">SOLO</a><span aria-current="page">MULTI</span>
    </nav>
    <label for="playerName" class="label">NAME</label>
-   <input id="playerName" maxlength="18" autocomplete="nickname" placeholder="NAME" required>
+   <input id="playerName" maxlength="24" autocomplete="nickname" placeholder="NAME (OPTIONAL)">
    <div id="inviteDetails" hidden>
     <p>INVITED TO ROOM <strong id="inviteCode"></strong></p>
         <button id="acceptInvite" class="primary" type="button">JOIN LOBBY</button>
@@ -376,7 +376,7 @@ html,body,body *{font-family:'Press Start 2P',ui-monospace,monospace!important}
     <div class="nicknameBar"><span>PLAYING AS <strong id="currentName">—</strong></span><button id="editName" type="button">EDIT NAME</button></div>
     <form id="nicknameForm" hidden>
      <label for="nickname" class="label">YOUR GAMER NAME (OPTIONAL)</label>
-     <div class="nicknameControls"><input id="nickname" maxlength="18" autocomplete="nickname" required><button id="saveName" type="submit" class="primary">SAVE</button><button id="skipName" type="button">LATER</button></div>
+     <div class="nicknameControls"><input id="nickname" maxlength="24" autocomplete="nickname" required><button id="saveName" type="submit" class="primary">SAVE</button><button id="skipName" type="button">LATER</button></div>
      <div id="nameError" class="error" role="alert" aria-live="polite"></div>
     </form>
    <div class="statLine"><span id="playerCount">1/4</span><span>CONNECTED: <b id="connection">CONNECTING…</b></span></div>
@@ -396,6 +396,10 @@ html,body,body *{font-family:'Press Start 2P',ui-monospace,monospace!important}
 (function(){
 "use strict";
 const $=id=>document.getElementById(id);
+const NAME_KEY="brick-asmr-player-name",CONFIRMED_KEY="brick-asmr-name-confirmed",NAME_RE=/^[\p{L}\p{N} _.-]{2,24}$/u;
+let profileName="";
+try{const saved=localStorage.getItem(NAME_KEY)||"";if(localStorage.getItem(CONFIRMED_KEY)==="1"&&NAME_RE.test(saved))profileName=saved;}catch{}
+function rememberName(name){profileName=name;try{localStorage.setItem(NAME_KEY,name);localStorage.setItem(CONFIRMED_KEY,"1");}catch{}}
 const SENS_KEY='bricksPaddleSensitivity',SENS_VALUES=[.65,1,1.35],SENS_NAMES=['LOW','MID','HIGH'];
 let sensitivityLevel=0;
 try{const saved=localStorage.getItem(SENS_KEY);if(['0','1','2'].includes(saved))sensitivityLevel=Number(saved);}catch(e){}
@@ -529,20 +533,21 @@ async function request(path,body){
 }
 function name(){
  const n=$("playerName").value.trim().normalize("NFKC");
- if(!/^[\p{L}\p{N} ._-]{2,18}$/u.test(n))throw Error("Enter a gamer name of 2–18 characters");
- return n;
+ if(n&&!NAME_RE.test(n))throw Error("Enter a gamer name of 2–24 characters");
+ return n||randomPlayerName();
 }
-let joining=false;
+let joining=false,lastPromptedRound="";
 function waiting(b){$("create").disabled=$("join").disabled=$("acceptInvite").disabled=b;}
 async function joinRoom(code,displayName){
  const result=await request("/"+code+"/join",{name:displayName});
+ if($("playerName").value.trim())rememberName(displayName);
  await enter(result.code,result.you);
  return result;
 }
 async function doCreate(){
  if(joining)return;
  joining=true;waiting(true);error("");
- try{const displayName=name();const result=await request("",{name:displayName,aspect:window.innerWidth/window.innerHeight});await enter(result.code,result.you);localStorage.setItem("bricksPlayerName",displayName);}
+ try{const displayName=name();const result=await request("",{name:displayName,aspect:window.innerWidth/window.innerHeight});if($("playerName").value.trim())rememberName(displayName);await enter(result.code,result.you);}
  catch(e){error(e.message);}finally{waiting(false);joining=false;}
 }
 async function doJoin(){
@@ -553,12 +558,11 @@ async function doJoin(){
   if(!/^[A-Z2-9]{6}$/.test(code))throw Error("Enter a valid six-character code");
   const displayName=name();
   await joinRoom(code,displayName);
-  localStorage.setItem("bricksPlayerName",displayName);
  }catch(e){error(e.message);}finally{waiting(false);joining=false;}
 }
 function showInvitePrompt(code){
  $("joinCode").value=code;$("inviteCode").textContent=code;
- $("playerName").value=localStorage.getItem("bricksPlayerName")||randomPlayerName();
+ $("playerName").value=profileName;
  $("roomActions").hidden=true;$("inviteDetails").hidden=false;
  $("panel").hidden=false;$("intro").hidden=false;$("room").hidden=true;
  $("playerName").focus({preventScroll:true});
@@ -567,9 +571,11 @@ async function loadInvite(code){
  try{await enter(code);}
  catch(e){showInvitePrompt(code);if(e.status!==401)error(e.message);}
 }
-function openNicknamePrompt(){
+function openNicknamePrompt(forScore=false){
  const mine=state?.players.find(p=>p.id===you);
- $("nickname").value=mine?.name||$("playerName").value||"";
+ $("nickname").value=forScore?"":(mine?.name||profileName||"");
+ $("nicknameForm").querySelector("label").textContent=forScore?"SAVE YOUR SCORE · ENTER A NAME":"YOUR GAMER NAME";
+ $("skipName").textContent=forScore?"LATER":"CANCEL";
  $("nameError").textContent="";
  $("nicknameForm").hidden=false;
  $("nickname").focus({preventScroll:true});
@@ -759,6 +765,10 @@ function render(){
    $("glassTitle").textContent=result.reason==="cleared"?"BOARD CLEARED":"ROUND COMPLETE";
    $("glassText").textContent=s.players.filter(p=>p.score===top).map(p=>p.name).join(" & ")+" · "+top+" POINTS";
   }
+ }
+ if(s.status==="finished"&&me.score>0&&!profileName){
+  const completed=s.code+":"+s.round;
+  if(lastPromptedRound!==completed){lastPromptedRound=completed;openNicknamePrompt(true);}
  }
  $("finishText").textContent=s.status==="finished"?(hosting?"Ready for another round.":"Waiting for the host to restart."):"";
  for(let relativeSide=0;relativeSide<4;relativeSide++){const worldSide=(me.seat+relativeSide)%4;const p=s.players.find(v=>v.seat===worldSide);renderSeat(relativeSide,p,p?.id===you);}
@@ -1104,13 +1114,13 @@ $("create").addEventListener("click",()=>{audioInit();doCreate();});$("join").ad
 $("joinCode").addEventListener("keydown",event=>{if(event.key==="Enter")doJoin();});
 $("acceptInvite").addEventListener("click",()=>{audioInit();doJoin();});
 $("playerName").addEventListener("keydown",event=>{if(event.key==="Enter"&&!$("inviteDetails").hidden){event.preventDefault();audioInit();doJoin();}});
-$("editName").addEventListener("click",openNicknamePrompt);
+$("editName").addEventListener("click",()=>openNicknamePrompt());
 $("skipName").addEventListener("click",()=>{$("nicknameForm").hidden=true;});
 $("nicknameForm").addEventListener("submit",async event=>{
  event.preventDefault();$("nameError").textContent="";$("saveName").disabled=true;
  try{
   const result=await request("/"+roomCode+"/rename",{name:$("nickname").value.trim()});
-  $("playerName").value=result.name;localStorage.setItem("bricksPlayerName",result.name);
+  $("playerName").value=result.name;rememberName(result.name);
   const me=state?.players.find(p=>p.id===you);if(me)me.name=result.name;
   $("nicknameForm").hidden=true;render();
  }catch(e){$("nameError").textContent=e.message;}
@@ -1142,7 +1152,7 @@ window.addEventListener("keydown",event=>{if(event.key==="Escape"&&!$("hudMenu")
 // A mouse click should not leave focus on a HUD button, or the next key press would trigger it again.
 $("hud").addEventListener("click",event=>{if(event.detail>0)event.target.closest("button")?.blur();});
 resize();
-$("playerName").value=localStorage.getItem("bricksPlayerName")||randomPlayerName();
+$("playerName").value=profileName;
 const invitedPath=location.pathname.match(/^\/multiplayer\/([A-Z2-9]{6})\/?$/i);
 if(invitedPath)loadInvite(invitedPath[1].toUpperCase());
 })();
