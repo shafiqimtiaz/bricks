@@ -144,7 +144,7 @@ body{--hud-life:#ff7a6b}
 #hudFill{display:block;width:100%;height:100%;transform-origin:left;transform:scaleX(0);transition:transform .3s ease-out;
  background:linear-gradient(90deg,var(--lb-secondary),var(--l-accent))}
 @media(prefers-reduced-motion:reduce){#hudFill,#hud button{transition:none}}
-#nameModal[hidden]{display:none}
+#nameModal[hidden],#nameCancel[hidden]{display:none}
 #nameModal{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:16px;box-sizing:border-box;background:#000c;backdrop-filter:blur(5px);color:#f1f4f5;font-family:'Press Start 2P',ui-monospace,monospace}
 #nameForm{width:min(360px,100%);padding:24px 18px;box-sizing:border-box;border:1px solid #4d6973;background:#080b0f;box-shadow:0 0 0 3px #000a,0 0 35px #58c9fa22;display:flex;flex-direction:column;gap:16px}
 #nameForm h2{font-size:13px;line-height:1.7;color:#ff8f80;margin:0}
@@ -517,7 +517,7 @@ function react(e){
         crushed = true; showMsg('CRUSHED!\ntap to restart');
         flashW = .8; shake = 12; vib([80, 40, 160]); [0, -3, -7, -12].forEach((s, j) => setTimeout(() => { notesThisFrame = 0; blip(110 * Math.pow(2, s / 12), .3, .3, 'square'); }, j * 110));
       } else { showMsg('out of lives\ntap to restart'); flashW = .5; }
-      if (soloMode === 'infinite') onInfiniteOver(e.reason);
+      onRunOver(e.reason);
       break;
   }
 }
@@ -799,6 +799,8 @@ function fmtTime(ms){const m=Math.floor(ms/60000),s=(ms-m*60000)/1000;return m+'
 const boardId=()=>seed+'-v4-'+style+(W===360?'':'-a'+W);
 const P=id=>document.getElementById(id);
 let panelMode=null,lastTime=0,lastNote='',boardRows=[],boardKey='',boardStatus='loading',boardSeq=0,localBest={},localHighScores={},myId='',myName='',lastRows=0,lastScore=0,lastBricks=0,lastCombo=0,lastScoreNote='',lastEndReason='';
+const PLAYER_NAME_KEY='bricksPlayerName',NAME_CONFIRMED_KEY='bricksPlayerNameConfirmed';
+let nameConfirmed=false,nameWaiter=null;
 try{
  myId=localStorage.getItem('brick-asmr-player-id')||'';
  if(!/^[0-9a-f-]{36}$/i.test(myId)){myId=crypto.randomUUID();localStorage.setItem('brick-asmr-player-id',myId);}
@@ -806,12 +808,13 @@ try{
  localBest=JSON.parse(localStorage.getItem('brick-asmr-best')||'{}')||{};
  localHighScores=JSON.parse(localStorage.getItem('brick-asmr-high-scores')||'{}')||{};
 }catch(e){myId=crypto.randomUUID();}
-if(!/^[\p{L}\p{N} _.-]{2,24}$/u.test(myName)){
- myName=randomPlayerName();
- try{localStorage.setItem('brick-asmr-player-name',myName);}catch(e){}
-}
+try{
+ nameConfirmed=localStorage.getItem(NAME_CONFIRMED_KEY)==='1';
+ if(nameConfirmed)myName=localStorage.getItem(PLAYER_NAME_KEY)||myName;
+}catch(e){}
+if(!/^[\p{L}\p{N} _.-]{2,24}$/u.test(myName)){myName='';nameConfirmed=false;}
 function myBest(key){return Number.isFinite(localBest[key])?localBest[key]:undefined;}
-function setLinks(){P('pfull').href='/leaderboard?metric='+(panelMode==='over'?'score':'time');P('pname').textContent='Player: '+myName+' ✎';}
+function setLinks(){P('pfull').href='/leaderboard?metric='+(panelMode==='over'?'score':'time');P('pname').textContent=(nameConfirmed?myName:'YOUR NAME')+' ✎';}
 async function loadBoard(){
  const seq=++boardSeq;boardKey=boardId();boardStatus='loading';boardRows=[];renderPanel();
  try{
@@ -823,41 +826,61 @@ async function loadBoard(){
  }catch(e){if(seq===boardSeq)boardStatus='error';}
  if(seq===boardSeq)renderPanel();
 }
-async function onInfiniteOver(reason){
-  lastRows=S.descent?S.descent.rows:0;
-  lastScore=Math.round(me.brickScore);
-  lastBricks=me.bricksBroken;
-  lastCombo=me.maxCombo;
-  lastEndReason=reason;
-  const key=boardId();
-  if(lastScore>Number(localHighScores[key]||0)){
-   localHighScores[key]=lastScore;
-   try{localStorage.setItem('brick-asmr-high-scores',JSON.stringify(localHighScores));}catch(e){}
-  }
-  lastScoreNote='SCORE '+lastScore+' · '+lastBricks+' BRICKS · '+lastCombo+' MAX COMBO';
-  showPanel('over');
-  if(lastScore<1)return;
-  try{
-   const res=await fetch('/api/leaderboard',{method:'POST',headers:{'content-type':'application/json'},
-    body:JSON.stringify({metric:'score',key,playerId:myId,name:myName,score:lastScore,bricksBroken:lastBricks,bestCombo:lastCombo})});
-   if(!res.ok)throw Error('Score rejected');
-   lastScoreNote+=' · WORLD SAVED';
-  }catch(e){lastScoreNote+=' · LOCAL ONLY';}
-  if(panelMode==='over')renderPanel();
+async function ensureName(){
+ if(nameConfirmed&&/^[\\p{L}\\p{N} _.-]{2,24}$/u.test(myName))return myName;
+ return new Promise(resolve=>{
+  nameWaiter=resolve;P('nameInput').value='';P('nameError').textContent='';
+  P('nameTitle').textContent='SAVE YOUR SCORE';P('nameCancel').hidden=true;
+  P('nameModal').hidden=false;P('nameInput').focus();
+ });
+}
+async function saveScoreRun(key,score,bricksBroken,bestCombo){
+ if(score<1)return false;
+ if(score>Number(localHighScores[key]||0)){
+  localHighScores[key]=score;
+  try{localStorage.setItem('brick-asmr-high-scores',JSON.stringify(localHighScores));}catch(e){}
+ }
+ const name=await ensureName();
+ try{
+  const res=await fetch('/api/leaderboard',{method:'POST',headers:{'content-type':'application/json'},
+   body:JSON.stringify({metric:'score',key,playerId:myId,name,score,bricksBroken,bestCombo})});
+  if(!res.ok)throw Error('Score rejected');
+  return true;
+ }catch(e){return false;}
+}
+async function onRunOver(reason){
+ const key=boardId(),score=Math.round(me.brickScore),broken=me.bricksBroken,combo=me.maxCombo;
+ lastRows=S.descent?S.descent.rows:0;
+ lastScore=score;lastBricks=broken;lastCombo=combo;lastEndReason=reason;
+ lastScoreNote='SCORE '+score+' · '+broken+' BRICKS · '+combo+' MAX COMBO';
+ showPanel('over');
+ if(score<1)return;
+ const saved=await saveScoreRun(key,score,broken,combo);
+ lastScoreNote+=saved?' · WORLD SAVED':' · LOCAL ONLY';
+ if(panelMode==='over')renderPanel();
 }
 async function onClear(ms){
- const key=boardId(),old=myBest(key);
- lastTime=ms;
+ const key=boardId(),old=myBest(key),score=Math.round(me.brickScore);
+ const broken=me.bricksBroken,combo=me.maxCombo;
+ lastTime=ms;lastScore=score;lastBricks=broken;lastCombo=combo;
  const improved=old===undefined||ms<old;
  lastNote=improved?(old===undefined?'first clear!':'new best! · was '+fmtTime(old)):'best '+fmtTime(old);
  if(improved){localBest[key]=ms;try{localStorage.setItem('brick-asmr-best',JSON.stringify(localBest));}catch(e){}}
  showPanel('clear');
- // Infinite runs never clear, and endless scores stay out of the world rankings.
- if(soloMode!=="infinite")try{
-  const res=await fetch('/api/leaderboard',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key,playerId:myId,name:myName,timeMs:ms})});
+ if(soloMode==='infinite')return;
+ const name=await ensureName();
+ try{
+  const res=await fetch('/api/leaderboard',{method:'POST',headers:{'content-type':'application/json'},
+   body:JSON.stringify({key,playerId:myId,name,timeMs:ms})});
   if(!res.ok)throw Error('Rejected');
-  if(key===boardId()){lastNote+=' · saved worldwide';await loadBoard();}
- }catch(e){if(key===boardId()){lastNote+=' · saved on device';boardStatus='error';renderPanel();}}
+  lastNote+=' · time saved worldwide';
+  if(key===boardId())await loadBoard();
+ }catch(e){lastNote+=' · time saved on device';boardStatus='error';renderPanel();}
+ if(score>0){
+  const saved=await saveScoreRun(key,score,broken,combo);
+  lastNote+=saved?' · score saved worldwide':' · score saved on device';
+ }
+ if(panelMode==='clear')renderPanel();
 }
 function showPanel(mode){panelMode=mode;P('panel').hidden=false;setLinks();renderPanel();if(mode!=='over')loadBoard();syncPause();}
 function hidePanel(){panelMode=null;P('panel').hidden=true;syncPause();}
@@ -865,8 +888,8 @@ function emptyBoard(note){const li=document.createElement('li');li.className='em
 function renderPanel(){
  if(!panelMode)return;
  if(panelMode==='over'){
-  P('ptitle').textContent='INFINITE · '+(lastEndReason==='crushed'?'CRUSHED':'OUT OF LIVES');
-  P('ptime').textContent=lastScore.toLocaleString()+' PTS · '+lastRows+' ROWS';
+  P('ptitle').textContent=(soloMode==='infinite'?'INFINITE':'CLASSIC')+' · '+(lastEndReason==='crushed'?'CRUSHED':'OUT OF LIVES');
+  P('ptime').textContent=lastScore.toLocaleString()+' PTS · '+(soloMode==='infinite'?lastRows+' ROWS':lastBricks+' BRICKS');
   P('pnote').textContent=lastScoreNote;
   P('pnext').hidden=true;P('pclose').hidden=false;P('pbrag').hidden=true;
   P('pmodeInf').hidden=false;P('pmodeCls').hidden=false;
@@ -892,12 +915,16 @@ function renderPanel(){
   li.append(a,b,c);ol.append(li);
  }
 }
-P('pname').onclick=()=>{
- P('nameInput').value=myName;P('nameError').textContent='';P('nameModal').hidden=false;P('nameInput').focus();
-};
+function openNameModal(){
+ P('nameTitle').textContent='LEADERBOARD NAME';
+ P('nameCancel').hidden=false;
+ P('nameInput').value=nameConfirmed?myName:'';
+ P('nameError').textContent='';P('nameModal').hidden=false;P('nameInput').focus();
+}
+P('pname').onclick=openNameModal;
 function closeNameModal(){P('nameModal').hidden=true;P('pname').focus();}
-P('nameCancel').onclick=closeNameModal;
-P('nameModal').addEventListener('pointerdown',e=>{if(e.target===P('nameModal'))closeNameModal();});
+P('nameCancel').onclick=()=>{if(!nameWaiter)closeNameModal();};
+P('nameModal').addEventListener('pointerdown',e=>{if(e.target===P('nameModal')&&!nameWaiter)closeNameModal();});
 P('nameModal').addEventListener('keydown',e=>{
  if(e.key!=='Tab')return;
  const items=[...P('nameModal').querySelectorAll('input,button')].filter(el=>!el.disabled&&!el.hidden);
@@ -909,18 +936,18 @@ P('nameModal').addEventListener('keydown',e=>{
 P('nameForm').addEventListener('submit',async e=>{
  e.preventDefault();
  const name=P('nameInput').value.trim().normalize('NFKC');
- if(!/^[\p{L}\p{N} _.-]{2,24}$/u.test(name)){P('nameError').textContent='Use 2–24 letters, numbers, spaces, _ . or -';return;}
- myName=name;try{localStorage.setItem('brick-asmr-player-name',name)}catch(e){}
- closeNameModal();setLinks();showToast('Leaderboard name saved');
- const saved=Object.entries(localBest).find(([key,time])=>/^[a-z0-9]{1,16}-v4-(clean|vintage|vapor)(?:-a\d{3,4})?$/.test(key)&&Number.isSafeInteger(time)&&time>0);
- if(saved){try{const res=await fetch('/api/leaderboard',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:saved[0],playerId:myId,name:myName,timeMs:saved[1]})});if(!res.ok)throw Error('Not saved');await loadBoard();}catch(e){showToast('Name saved locally; world rankings unavailable');}}
- const savedScore=Object.entries(localHighScores).find(([key,score])=>/^[a-z0-9]{1,16}-v4-(clean|vintage|vapor)(?:-a\d{3,4})?$/.test(key)&&Number.isSafeInteger(score)&&score>0);
- if(savedScore){try{
-  const res=await fetch('/api/leaderboard',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({
-   metric:'score',key:savedScore[0],playerId:myId,name:myName,score:savedScore[1],
-   bricksBroken:savedScore[0]===boardId()?lastBricks:0,bestCombo:savedScore[0]===boardId()?lastCombo:0})});
-  if(!res.ok)throw Error('Not saved');
- }catch(e){showToast('Score name will update with your next run');}}
+ if(!/^[\\p{L}\\p{N} _.-]{2,24}$/u.test(name)){P('nameError').textContent='Use 2–24 letters, numbers, spaces, _ . or -';return;}
+ myName=name;nameConfirmed=true;
+ try{localStorage.setItem('brick-asmr-player-name',name);localStorage.setItem(PLAYER_NAME_KEY,name);localStorage.setItem(NAME_CONFIRMED_KEY,'1');}catch(e){}
+ const pending=nameWaiter;nameWaiter=null;
+ closeNameModal();setLinks();if(pending)pending(name);
+ try{
+  const res=await fetch('/api/leaderboard',{method:'POST',headers:{'content-type':'application/json'},
+   body:JSON.stringify({metric:'rename',playerId:myId,name})});
+  if(!res.ok)throw Error('Rename failed');
+  if(!pending)showToast('Leaderboard name updated');
+  if(panelMode==='clear')await loadBoard();
+ }catch(e){if(!pending)showToast('Name saved locally; rankings unavailable');}
 });
 P('pnext').onclick=()=>newBoard();
 P('pretry').onclick=()=>newBoard();
@@ -948,7 +975,7 @@ P('sensitivityToggle').textContent='SENS '+SENS_NAMES[sensitivityLevel];
 P('sensitivityToggle').onclick=()=>{sensitivityLevel=(sensitivityLevel+1)%SENS_VALUES.length;try{localStorage.setItem(SENS_KEY,String(sensitivityLevel));}catch(e){}P('sensitivityToggle').textContent='SENS '+SENS_NAMES[sensitivityLevel];};
 P('hudMenu').addEventListener('click',e=>{if(e.target.id!=='soundToggle'&&e.target.id!=='sensitivityToggle'&&e.target.id!=='soloMode')closeMenu();});
 document.addEventListener('pointerdown',e=>{if(!e.target.closest('#hudMenu,#hudMenuToggle'))closeMenu();});
-window.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!P('nameModal').hidden)closeNameModal();else closeMenu(true);}});
+window.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!P('nameModal').hidden){if(!nameWaiter)closeNameModal();}else closeMenu(true);}});
 // A mouse click should not leave focus on a HUD button, or Space would trigger it again instead of launching.
 P('hud').addEventListener('click',e=>{if(e.detail>0)e.target.closest('button')?.blur();});
 resize();startBoard();requestAnimationFrame(frame);
