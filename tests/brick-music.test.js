@@ -141,3 +141,16 @@ test("solo and multiplayer use the same automatic music source", () => {
     assert.equal(runInNewContext(bundle + "\ncreateBrickMusic().count"), 12);
   }
 });
+
+test("dense hit bursts stay within 150 ms and reset on pause", () => {
+  const music = createBrickMusic(), notes=[];
+  music.reset("dense");
+  const kit={context:{currentTime:5},blip:(...args)=>notes.push(args)};
+  for(let i=0;i<40;i++)music.hit(kit);
+  assert.ok(notes.length<=3);
+  assert.ok(notes.every(n=>n[4]<=.15+1e-9));
+  music.clearQueue();assert.equal(music.hit(kit),true);
+  assert.equal(notes.at(-1)[4],0);
+  music.reset("retry");assert.equal(music.hit(kit),true);
+  assert.equal(notes.at(-1)[4],0);
+});

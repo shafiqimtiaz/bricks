@@ -531,8 +531,8 @@ function react(e){
       const fc = col[i] ? (style === 'vapor' ? vPal : palette)[col[i]] : (style === 'vapor' ? vWall : wallCols)[1];
       const by = GY + S.crush.by + r * CS;
       comboPop = 1;
-      if (flashes.length < 500) flashes.push({x: GX + c * CS, y: by, c: fc, t: 1});
-      if (style !== 'clean' && debris.length < 900) for (let d = 0; d < 2; d++) debris.push({x: GX + c * CS + Math.random() * CS, y: by + Math.random() * CS, vx: (Math.random() - .5) * 60, vy: (Math.random() - .8) * 50, c: fc, t: 1});
+      if (flashes.length < 96 && balls.length < 32) flashes.push({x: GX + c * CS, y: by, c: fc, t: 1});
+      if (!introReducedMotion && balls.length < 24 && style !== 'clean' && debris.length < 160) for (let d = 0; d < 2; d++) debris.push({x: GX + c * CS + Math.random() * CS, y: by + Math.random() * CS, vx: (Math.random() - .5) * 60, vy: (Math.random() - .8) * 50, c: fc, t: 1});
       drawCell(i); break;
     }
     case 'hit': brickNote(((e.c+.5)*CS+GX)/W*1.1-.55); drawCell(e.i); break;
@@ -555,11 +555,12 @@ function react(e){
     case 'life': vib(60); showToast(e.lives + ' ' + (e.lives === 1 ? 'LIFE' : 'LIVES') + ' REMAINING',1100); break;
     case 'end':
       timerOn = false;
+      brickMusic.clearQueue();
       if (e.reason === 'cleared') {
         showMsg(''); onClear(Math.round(runTime));
         flashW = .7; vib([30, 30, 60]);
         const pal = style === 'vapor' ? ['#ff71ce', '#01cdfe', '#05ffa1', '#b967ff', '#fffb96'] : ['#ffd166', '#ef476f', '#06d6a0', '#118ab2', '#ffffff'];
-        for (let j = 0; j < 180; j++) conf.push({x: Math.random() * W, y: -10 - Math.random() * 200, vx: (Math.random() - .5) * 60, vy: 40 + Math.random() * 120, r: Math.random() * 6, vr: (Math.random() - .5) * 10, c: pal[j % pal.length]}); [0,4,7,12,16].forEach((s,j)=>setTimeout(()=>{notesThisFrame=0;blip(262*Math.pow(2,s/12),.2,.4)},j*90));
+        for (let j = 0; !introReducedMotion && j < 60; j++) conf.push({x: Math.random() * W, y: -10 - Math.random() * 200, vx: (Math.random() - .5) * 60, vy: 40 + Math.random() * 120, r: Math.random() * 6, vr: (Math.random() - .5) * 10, c: pal[j % pal.length]}); [0,4,7,12,16].forEach((s,j)=>setTimeout(()=>{notesThisFrame=0;blip(262*Math.pow(2,s/12),.2,.4)},j*90));
       } else if (e.reason === 'crushed') {
         crushed = true; showMsg('CRUSHED!\ntap to restart');
         flashW = .8; shake = 12; vib([80, 40, 160]); [0, -3, -7, -12].forEach((s, j) => setTimeout(() => { notesThisFrame = 0; blip(110 * Math.pow(2, s / 12), .3, .3, 'square'); }, j * 110));
@@ -596,14 +597,17 @@ function render(fs = 1){
   ctx.globalAlpha = .35;
   ctx.strokeStyle = '#67756f'; ctx.lineWidth = 1; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(0, CRUSH_Y + .5); ctx.lineTo(W, CRUSH_Y + .5); ctx.stroke(); ctx.setLineDash([]);
   ctx.globalAlpha = 1;
+  if (soloMode === 'infinite' && S.status === 'play' && E.crushGap(S, 0) <= 3 * S.CS) {
+    ctx.fillStyle = '#d98a70'; ctx.fillRect(6, CRUSH_Y - 2, W - 12, 2);
+  }
   ctx.setTransform(1, 0, 0, 1, sx * scaleX, (sy + drop) * scaleY);
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(bcv, 0, 0);
   ctx.setTransform(scaleX, 0, 0, scaleY, sx * scaleX, sy * scaleY);
 
   // starter bricks pulse bright with a soft glow; every other power-up stays secret
-  { const pulse = .5 + .5 * Math.sin(performance.now() / 220);
-    ctx.save(); ctx.shadowColor = '#fff'; ctx.shadowBlur = 6 + 10 * pulse;
+  { const pulse = introReducedMotion ? 0 : .5 + .5 * Math.sin(performance.now() / 220);
+    ctx.save(); ctx.shadowColor = '#fff'; ctx.shadowBlur = introReducedMotion ? 0 : 6 + 10 * pulse;
     for (let i = (ROWS - 12) * COLS; i < N; i++) if (pu[i] === 11 && hp[i]) {
       const x = GX + (i % COLS) * CS, y = GY + drop + ((i / COLS) | 0) * CS;
       ctx.globalAlpha = 1; ctx.fillStyle = puDef(11).c; ctx.fillRect(x, y, CS, CS);
@@ -1013,10 +1017,10 @@ P('pbrag').onclick=()=>{
  copyText(t,'Result copied');
 };
 P('top').onclick=()=>{location.href='/leaderboard?metric='+(soloMode==='infinite'?'score':'time')+'&arena='+W+'&seed='+encodeURIComponent(seed);};
-function syncPause(){ paused = !P('hudMenu').hidden || !P('panel').hidden; }
+function syncPause(){ paused = !P('hudMenu').hidden || !P('panel').hidden; if(paused)brickMusic.clearQueue(); }
 P('hudMenuToggle').onclick=()=>{const opened=P('hudMenu').hidden;P('hudMenu').hidden=!opened;P('hudMenuToggle').setAttribute('aria-expanded',String(opened));P('hudMenuToggle').textContent=opened?'×':'☰';P('hudMenuToggle').setAttribute('aria-label',opened?'Close menu':'Open menu');if(opened){for(const k in keys)keys[k]=false;P('hudMenu').querySelector('a,button')?.focus();}syncPause();};
 function closeMenu(restoreFocus=false){const open=!P('hudMenu').hidden;P('hudMenu').hidden=true;P('hudMenuToggle').setAttribute('aria-expanded','false');P('hudMenuToggle').textContent='☰';P('hudMenuToggle').setAttribute('aria-label','Open menu');if(open&&restoreFocus===true)P('hudMenuToggle').focus();syncPause();}
-P('soundToggle').onclick=()=>{soundOn=!soundOn;P('soundToggle').textContent='SOUND '+(soundOn?'ON':'OFF');P('soundToggle').setAttribute('aria-pressed',String(soundOn));if(soundOn)audioInit();};
+P('soundToggle').onclick=()=>{soundOn=!soundOn;if(!soundOn)brickMusic.clearQueue();P('soundToggle').textContent='SOUND '+(soundOn?'ON':'OFF');P('soundToggle').setAttribute('aria-pressed',String(soundOn));if(soundOn)audioInit();};
 P('sensitivityToggle').textContent='SENSITIVITY '+SENS_NAMES[sensitivityLevel];
 P('sensitivityToggle').onclick=()=>{sensitivityLevel=(sensitivityLevel+1)%SENS_VALUES.length;try{localStorage.setItem(SENS_KEY,String(sensitivityLevel));}catch(e){}P('sensitivityToggle').textContent='SENSITIVITY '+SENS_NAMES[sensitivityLevel];};
 P('hudMenu').addEventListener('click',e=>{if(e.target.id!=='soundToggle'&&e.target.id!=='sensitivityToggle'&&e.target.id!=='soloMode')closeMenu();});
