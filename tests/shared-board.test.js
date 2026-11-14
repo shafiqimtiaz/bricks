@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { arenaLayout, bricks, aimVelocity, normalizeBallVelocity, drawBrickTile, randomPlayerName, browserCoreSource, soloCoreSource } from "../src/game-core.js";
+import { arenaLayout, squareArena, bricks, aimVelocity, normalizeBallVelocity, drawBrickTile, randomPlayerName, browserCoreSource, soloCoreSource } from "../src/game-core.js";
 
 import { loadServer, makeRoom, roomInstance, multiHtml as html, serverSource, soloHtml, soloWorker } from "./helpers.js";
 
@@ -51,6 +51,22 @@ test("new player names use varied adjective–noun combinations in both modes",(
  assert.match(browserCoreSource,/function randomPlayerName\(\)/);
  assert.match(soloCoreSource,/function randomPlayerName\(\)/);
  assert.match(soloHtml,/const previewName=myName\|\|randomPlayerName\(\)/);
+});
+
+test("V4 retains its seeded symmetry, family, and colours across Solo and multiplayer",()=>{
+ const portrait=arenaLayout(9/16),square=squareArena();
+ for(const seed of ["test001","face99","inside","liminal"]){
+  const boards=[bricks(seed,1,portrait),bricks(seed,2,portrait),bricks(seed,3,square),bricks(seed,4,square)];
+  for(const board of boards){
+   assert.equal(board.generatorVersion,4);
+   assert.equal(board.pattern,boards[0].pattern);
+   assert.equal(board.quad,boards[0].quad);
+   assert.deepEqual(board.palette,boards[0].palette);
+   assert.equal(board.total,[...board.hp].filter(c=>c!=="0"&&c!=="4").length);
+  }
+  assert.ok(boards[1].total<boards[0].total);
+  assert.deepEqual(boards[2],boards[3]);
+ }
 });
 
 test("paddle rotations use Solo's exact angular response and ball speed",()=>{
@@ -514,13 +530,13 @@ test("rapid repeated join or create clicks cannot reserve duplicate players", as
  let calls=0;
  const elements={create:{},join:{},acceptInvite:{},joinCode:{value:"ABCDE2"},playerName:{value:""}};
  const storage={setItem(){}};
- const createFlow=new Function("$","request","enter","localStorage","error","name","window",
+ const createFlow=new Function("$","request","enter","localStorage","error","name","window","leaderboardId",
   client.slice(from,to)+"return {doCreate,doJoin,isJoining:()=>joining};");
  const flow=createFlow(id=>elements[id],async (path,body)=>{
   calls++;
   await new Promise(resolve=>{release=resolve;});
   return {code:"ABCDE2",you:"new-player",resumed:false};
- },async()=>{},storage,()=>{},()=>"PlayerOne",{innerWidth:390,innerHeight:844});
+ },async()=>{},storage,()=>{},()=>"PlayerOne",{innerWidth:390,innerHeight:844},()=>"123e4567-e89b-12d3-a456-426614174000");
  const first=flow.doJoin();
  assert.equal(flow.isJoining(),true);
  await flow.doJoin();
