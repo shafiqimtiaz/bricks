@@ -11,6 +11,8 @@ Agent notes for bricks-asmr (Bricks ASMR: a brick-breaker game served from Cloud
 
 Updated automatically on every push to main by `.github/workflows/changelog.yml`. Newest first. Full history: `git log`.
 
+- 2026-11-14 `99976b6` Fix multiplayer lobby and Solo court parity; gate releases with QA
+- 2026-11-14 `5eaf100` [changelog] auto-update recent changes
 - 2026-11-14 `4ad13df` Allow simultaneous touch aiming and paddle glide (#47)
 - 2026-11-14 `e87708b` [changelog] auto-update recent changes
 - 2026-11-14 `4c40694` fix: remove removed sliderPos from browser core bundle
@@ -39,6 +41,4 @@ Updated automatically on every push to main by `.github/workflows/changelog.yml`
 - 2026-11-14 `5462a85` Refill Infinite bricks beside the formation, not grid row 0
 - 2026-11-14 `974f7b8` Infinite descent keeps ticking while the ball is held; fix trait line in Infinite Solo
 - 2026-11-14 `361dce0` Fix intermittent multiplayer paddle returns
-- 2026-11-14 `f1adcfc` Keep capsule contents out of multiplayer broadcasts; accept V3 generator arg in shared-board test
-- 2026-11-14 `2fa4a3a` Add Infinite mode for Solo and Multiplayer
 <!-- changelog:end -->
