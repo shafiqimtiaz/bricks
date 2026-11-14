@@ -2,7 +2,7 @@
 
 Agent notes for bricks-asmr (Bricks ASMR: a brick-breaker game served from Cloudflare Workers).
 
-- Main branch deploys live to bricks.shafq.dev. Work on main; pull before pushing, the owner pushes his own commits often.
+- Main deploys live to bricks.shafq.dev. Develop on a short-lived branch; run QA locally and in a pull request before merging to main. Never deploy a failing change.
 - `npm test` runs the suite (`node --test`).
 - `src/` holds the game (solo.html, multiplayer.html, multi.js, engine.js, game-core.js); `tests/` holds the suite.
 

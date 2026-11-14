@@ -1,0 +1,52 @@
+name: QA
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, 'qa/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gameplay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Unit and integration regressions
+        run: npm test
+      - name: Worker build (no deploy)
+        run: npm run build
+      - name: Install browser QA
+        run: |
+          npm install --no-save --no-package-lock playwright@1.65.1
+          npx playwright install --with-deps chromium
+      - name: Browser QA - Solo and live multiplayer
+        run: |
+          set -eu
+          npm run dev -- --ip 127.0.0.1 --port 8787 > qa-wrangler.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 60); do
+            if curl --silent --show-error --fail http://127.0.0.1:8787/multiplayer > /dev/null; then break; fi
+            if ! kill -0 "$pid" 2>/dev/null; then cat qa-wrangler.log; exit 1; fi
+            sleep 2
+          done
+          curl --silent --show-error --fail http://127.0.0.1:8787/multiplayer > /dev/null
+          node tests/browser-smoke.js
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: gameplay-qa-failure
+          path: |
+            qa-artifacts/
+            qa-wrangler.log
+          if-no-files-found: ignore

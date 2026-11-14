@@ -402,7 +402,7 @@ const sensitivity=()=>SENS_VALUES[sensitivityLevel];
 const API=location.pathname.startsWith("/multiplayer")?"/api/multiplayer/rooms":"/api/rooms";
 let aimAng=0,heldBefore=false,drag=null;
 let roomCode="",you="",state=null,socket=null,closed=false,retry=null,frame=0,lastStateAt=0,localPos=.5,inputSeq=0;
-let arena=arenaLayout(),view=boardView(arena,0),clock=0,lastFrame=0;
+let arena=arenaLayout(window.innerWidth/window.innerHeight),view=boardView(arena,0),clock=0,lastFrame=0;
 const serverNow=()=>Date.now()+clock,shownC={},held={};
 // The room's rules are Solo's: the same engine runs here for the aim path, paddle geometry and power-up tables.
 const E=brickEngine();
@@ -541,7 +541,7 @@ async function joinRoom(code,displayName){
 async function doCreate(){
  if(joining)return;
  joining=true;waiting(true);error("");
- try{const displayName=name();const result=await request("",{name:displayName});await enter(result.code,result.you);localStorage.setItem("bricksPlayerName",displayName);}
+ try{const displayName=name();const result=await request("",{name:displayName,aspect:window.innerWidth/window.innerHeight});await enter(result.code,result.you);localStorage.setItem("bricksPlayerName",displayName);}
  catch(e){error(e.message);}finally{waiting(false);joining=false;}
 }
 async function doJoin(){
@@ -579,7 +579,7 @@ async function enter(code,id){
  const result=await request("/"+code+"/state");
  clearTimeout(retry);retry=null;socket?.close();socket=null;
  closed=false;roomCode=code;you=result.you||id||"";state=null;tilesFull=true;hpArr=null;clearFx();
- localStorage.setItem("bricksLastRoom",code);
+
  $("nicknameForm").hidden=true;$("intro").hidden=true;$("room").hidden=false;$("roomCode").textContent=code;
  document.activeElement?.blur?.();
  accept(result.state);connect();
@@ -806,21 +806,20 @@ function paintTiles(b){
 // The court backdrop (glow, faint grid, frame) is painted once and reused every frame.
 const court=document.createElement("canvas");let courtKey="";
 function paintCourt(){
- const key=[style,W,tileScale].join("|");
+ const key=[W,GRID_COLS,GRID_ROWS,GRID_SIZE,tileScale].join("|");
  if(key===courtKey)return;
  courtKey=key;court.width=W*tileScale;court.height=H*tileScale;
- const c=court.getContext("2d"),V=style==="vapor",C=style==="clean";
+ const c=court.getContext("2d");
  c.setTransform(tileScale,0,0,tileScale,0,0);
- const glow=c.createRadialGradient(W/2,292,20,W/2,292,Math.max(W,504)*.62);
- glow.addColorStop(0,V?"#24084a":C?"#2a2c2e":"#262b29");glow.addColorStop(1,V?"#0f0326":C?"#1d1e1f":"#161918");
- c.fillStyle=glow;c.beginPath();c.roundRect(6,40,W-12,504,5);c.fill();
- if(!C){
-  c.strokeStyle=V?"rgba(1,205,254,.07)":"rgba(255,255,255,.035)";c.lineWidth=1;c.beginPath();
-  for(let x=W/2%24;x<W-6;x+=24)if(x>6){c.moveTo(x+.5,40);c.lineTo(x+.5,544);}
-  for(let y=292%24+24;y<544;y+=24)if(y>40){c.moveTo(6,y+.5);c.lineTo(W-6,y+.5);}
-  c.stroke();
- }
- c.strokeStyle=V?"#ff71ce":C?"#5a5d60":"#56605c";c.lineWidth=1;c.beginPath();c.roundRect(6.5,40.5,W-13,503,5);c.stroke();
+ c.fillStyle="#151715";c.fillRect(0,0,W,H);
+ c.fillStyle="#232323";c.fillRect(GRID_X-2,GRID_Y-2,GRID_COLS*GRID_SIZE+4,GRID_ROWS*GRID_SIZE+4);
+ c.globalAlpha=.35;c.strokeStyle="#67756f";c.lineWidth=1;c.setLineDash([4,4]);
+ c.beginPath();
+ c.moveTo(6,526.5);c.lineTo(W-6,526.5);
+ c.moveTo(6,57.5);c.lineTo(W-6,57.5);
+ c.moveTo(22.5,40);c.lineTo(22.5,544);
+ c.moveTo(W-22.5,40);c.lineTo(W-22.5,544);
+ c.stroke();c.setLineDash([]);c.globalAlpha=1;
 }
 let floats=[];
 function label(text,x,y,angle){
@@ -1128,7 +1127,7 @@ $("sensitivityToggle").textContent="SENS "+SENS_NAMES[sensitivityLevel];
 $("sensitivityToggle").addEventListener("click",()=>{sensitivityLevel=(sensitivityLevel+1)%SENS_VALUES.length;try{localStorage.setItem(SENS_KEY,String(sensitivityLevel));}catch(e){}$("sensitivityToggle").textContent="SENS "+SENS_NAMES[sensitivityLevel];});
 $("leave").addEventListener("click",async()=>{
  closed=true;clearTimeout(retry);clearTimeout(pendingInput);pendingInput=null;$("panel").hidden=false;try{await request("/"+roomCode+"/leave",{});}catch{}
- socket?.close();socket=null;roomCode="";you="";state=null;hpArr=null;tilesFull=true;clearFx();setConnection("Offline");localStorage.removeItem("bricksLastRoom");$("menuStatus").textContent="";$("nicknameForm").hidden=true;$("room").hidden=true;$("intro").hidden=false;history.replaceState(null,"","/multiplayer");
+ socket?.close();socket=null;roomCode="";you="";state=null;hpArr=null;tilesFull=true;clearFx();setConnection("Offline");$("menuStatus").textContent="";$("nicknameForm").hidden=true;$("room").hidden=true;$("intro").hidden=false;history.replaceState(null,"","/multiplayer");
 });
 function closeMenu(restoreFocus=false){const open=!$("hudMenu").hidden;$("hudMenu").hidden=true;$("hudMenuToggle").setAttribute("aria-expanded","false");$("hudMenuToggle").textContent="☰";$("hudMenuToggle").setAttribute("aria-label","Open menu");if(open&&restoreFocus===true)$("hudMenuToggle").focus();}
 $("hudMenuToggle").addEventListener("click",()=>{
@@ -1144,11 +1143,6 @@ $("hud").addEventListener("click",event=>{if(event.detail>0)event.target.closest
 resize();
 $("playerName").value=localStorage.getItem("bricksPlayerName")||randomPlayerName();
 const invitedPath=location.pathname.match(/^\/multiplayer\/([A-Z2-9]{6})\/?$/i);
-if(invitedPath){
- loadInvite(invitedPath[1].toUpperCase());
-}else{
- const last=localStorage.getItem("bricksLastRoom");
- if(last&&/^[A-Z2-9]{6}$/.test(last))enter(last).catch(()=>{closed=true;roomCode="";$("room").hidden=true;$("intro").hidden=false;$("panel").hidden=false;localStorage.removeItem("bricksLastRoom");});
-}
+if(invitedPath)loadInvite(invitedPath[1].toUpperCase());
 })();
 </script></body></html>
