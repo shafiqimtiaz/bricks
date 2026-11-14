@@ -73,7 +73,7 @@ function brickEngine(rng=Math.random){
   for(let i=0;i<N;i++)if(hp[i]){const r=(i/a.cols)|0,c=i%a.cols;rowCount[r]++;colCount[c]++;minR=Math.min(minR,r);maxR=Math.max(maxR,r);minC=Math.min(minC,c);maxC=Math.max(maxC,c);}
   const S={
    W:a.width,H:a.height,wx:a.square?6:0,CS:a.cell,COLS:a.cols,ROWS:a.rows,GX:a.gridX,GY:a.gridY,N,BR:a.cell*.45,PU_R:a.cell*1.5,speed:ballSpeed(a),
-   mode:o.mode||'solo',set:o.set||'vintage',daily:!!o.daily,maxBalls:o.maxBalls||2500,holdSeconds:o.holdSeconds||0,
+   mode:o.mode||'solo',set:o.set||'vintage',daily:!!o.daily,maxBalls:o.maxBalls??40,holdSeconds:o.holdSeconds||0,
    hp,col,pu,rowCount,colCount,remaining:b.remaining,total:b.total,
    bounds:{X0:a.gridX+minC*a.cell,X1:a.gridX+(maxC+1)*a.cell,Y0:a.gridY+minR*a.cell,Y1:a.gridY+(maxR+1)*a.cell},
    seats:[...new Set(o.players.map(p=>p.seat))],
@@ -234,8 +234,9 @@ function brickEngine(rng=Math.random){
   for(const d of angles){if(S.balls.length>=S.maxBalls)break;const nb={...heldSpot(S,p),owner:p.id,source:p.id,...aimVelocity(p.seat,d,curSpeed(S))};S.balls.push(nb);}
  }
  function applyPU(d,pup,p){
-  if(d.t){if(d.own)p.fx[d.id]=d.t;else S.fx[d.id]=d.t;}
-  if(d.id==='mitosis')p.mitosisSplits=0;
+ const freshMitosis=d.id==='mitosis'&&!(p.fx.mitosis>0);
+ if(d.t){if(d.own)p.fx[d.id]=d.t;else S.fx[d.id]=d.t;}
+ if(freshMitosis)p.mitosisSplits=0;
   const snap=S.balls.length,hz=horizontal(p.seat);
   switch(d.id){
    case 'plus3':fromPaddle(p,[-.35,0,.35]);break;

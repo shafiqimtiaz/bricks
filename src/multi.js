@@ -100,7 +100,7 @@ export class BrickRoom extends DurableObject{
    players:r.players.map(p=>{
     const sp=S&&S.players.find(q=>q.id===p.id),o={id:p.id,name:p.name,seat:p.seat,online:live.has(p.id)};
     if(!sp)return {...o,out:0,lives:0,score:0,combo:0,c:edge(p.seat),pw,fx:{}};
-    return {...o,out:outOf(S,sp)?1:0,lives:S.mode==="versus"?sp.lives:S.pool,score:sp.score,combo:sp.combo,c:num(sp.c),pw:num(sp.pw),fx:fxOf(sp.fx)};
+    return {...o,out:outOf(S,sp)?1:0,lives:S.mode==="versus"?sp.lives:S.pool,score:sp.score,combo:sp.combo,c:num(sp.c),pw:num(sp.pw),fx:fxOf(sp.fx),danger:S.infinite&&S.status==="play"&&E.crushGap(S,sp.seat)<=3*S.CS};
    }),
    balls:S?S.balls.map(b=>[num(b.x),num(b.y),Math.round(b.vx),Math.round(b.vy),at(b.source),b.held?1:0]):[],
    pups:S?S.pups.map(u=>[num(u.x),num(u.y),u.k,at(u.owner)]):[],

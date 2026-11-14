@@ -89,15 +89,17 @@ export function createBrickMusic() {
     if (!soundKit) return false;
     const now = soundKit.context.currentTime;
     const delay = Math.max(0, nextAt - now);
-    if (delay > .45) return false;
+    if (delay > .15 + 1e-9) return false;
     const note = next();
     soundKit.blip(note.frequency, note.volume, note.duration, note.wave, delay, pan);
     nextAt = now + delay + tune.step;
     return true;
   }
 
+  function clearQueue() { nextAt = 0; }
+
   return {
-    reset, setLives, setDepth, next, hit,
+    reset, setLives, setDepth, next, hit, clearQueue,
     get name() { return tune.name; },
     get length() { return tune.notes.length; },
     get count() { return tunes.length; }

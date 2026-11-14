@@ -44,4 +44,5 @@ test("Multiplayer serves the shared engine with the core helpers it needs, as So
   assert.match(serverSource, /browserCoreSource\+"\\n"\+engineSource/);
   const client = multiHtml.slice(multiHtml.indexOf("<script>"));
   assert.match(client, /const E=brickEngine\(\)/);
+  assert.equal(runInNewContext(browserCoreSource + "\n" + engineSource + "\nbrickEngine().create({arena:{cols:13,rows:13,cell:6,width:584,height:584,gridX:100,gridY:100,square:true},board:{hp:'1'.repeat(169),colors:'1'.repeat(169),powerups:'0'.repeat(169),remaining:169,total:169},players:[{id:'p',seat:0}]}).maxBalls"), 40);
 });

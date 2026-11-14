@@ -87,3 +87,11 @@ test("serve prompt tells the player how to aim and launch",()=>{
  assert.match(soloHtml,/DRAG BELOW TO MOVE/);
  assert.match(multiHtml,/DRAG AIM · TAP LAUNCH/);
 });
+
+test("Infinite proximity cue and capped effects do not alter gameplay rules",()=>{
+ assert.match(soloHtml,/E\.crushGap\(S, 0\) <= 3 \* S\.CS/);
+ assert.match(multiHtml,/me\?\.danger/);
+ assert.match(soloHtml,/debris\.length < 160/);
+ assert.match(soloHtml,/balls\.length < 24/);
+ assert.match(soloHtml,/introReducedMotion \? 0/);
+});

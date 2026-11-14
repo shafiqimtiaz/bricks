@@ -255,3 +255,13 @@ test("a 2-player infinite room keeps coming for a minute without crushing", () =
   assert.ok(S.descent.rows >= 6, "several rows descended, got " + S.descent.rows);
   assert.ok(E.crushGap(S, 0) > 0 && E.crushGap(S, 2) > 0, "both gaps still open");
 });
+
+test("Infinite danger activates inside three world-space brick rows", () => {
+  const { E, S }=infiniteSolo();
+  const gap=E.crushGap(S,0);
+  assert.ok(Number.isFinite(gap));
+  S.crush.by=gap-3*S.CS-.01;
+  assert.ok(E.crushGap(S,0)>3*S.CS);
+  S.crush.by+=.02;
+  assert.ok(E.crushGap(S,0)<3*S.CS);
+});

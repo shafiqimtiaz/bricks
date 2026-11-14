@@ -40,6 +40,10 @@ test("solo: two fingers move aim and paddle independently across the two zones",
   near(me.aim, 60 / 360 * 2.3);
   near(me.target, 212.5);
   listeners.pointercancel(e(2, 310, 580));
+  listeners.pointerdown(e(5, 260, 580));
+  listeners.lostpointercapture(e(5, 260, 580));
+  listeners.pointermove(e(5, 310, 580));
+  near(me.target, 212.5, "lost capture must release glide");
   listeners.pointermove(e(1, 130, 220));
   near(me.aim, 90 / 360 * 2.3);
   listeners.pointerup(e(1, 130, 220));
@@ -95,6 +99,10 @@ test("multiplayer: aim and paddle respond to separate concurrent touches on the 
   listeners.pointermove(e(22, 330, 590));
   near(getPosition(), .5 + 70 / 360 * .65);
   listeners.pointercancel(e(22, 330, 590));
+  listeners.pointerdown(e(55, 260, 590));
+  listeners.lostpointercapture(e(55, 260, 590));
+  listeners.pointermove(e(55, 310, 590));
+  near(getPosition(), .5 + 70 / 360 * .65, "lost capture must release glide");
   listeners.pointermove(e(33, 280, 260, "mouse"));
   near(aim, (280 / 360 - .5) * 2.3);
   listeners.pointermove(e(33, 10, 600, "mouse"));
