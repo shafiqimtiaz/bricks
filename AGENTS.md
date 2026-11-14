@@ -11,6 +11,8 @@ Agent notes for bricks-asmr (Bricks ASMR: a brick-breaker game served from Cloud
 
 Updated automatically on every push to main by `.github/workflows/changelog.yml`. Newest first. Full history: `git log`.
 
+- 2026-11-14 `4c40694` fix: remove removed sliderPos from browser core bundle
+- 2026-11-14 `a5776ee` [changelog] auto-update recent changes
 - 2026-11-14 `b95e22f` Replace paddle sliders with relative glide and shared sensitivity (#46)
 - 2026-11-14 `a54058b` [changelog] auto-update recent changes
 - 2026-11-14 `efe18eb` Fix changelog loop guard to match the bot commit subject
@@ -39,6 +41,4 @@ Updated automatically on every push to main by `.github/workflows/changelog.yml`
 - 2026-11-14 `2fa4a3a` Add Infinite mode for Solo and Multiplayer
 - 2026-11-14 `0727c5f` Generate distinct procedural V3 level silhouettes while preserving previous seeds
 - 2026-11-14 `41c9dad` Remove completed one-time branch cleanup workflow
-- 2026-11-14 `2b481c8` Prune safe historical refs with no unique commits
-- 2026-11-14 `5506395` Prune merged feature branches safely via one-time GitHub Actions job
 <!-- changelog:end -->
