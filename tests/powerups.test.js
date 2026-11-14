@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { brickEngine } from "../src/engine.js";
+import { brickEngine, engineSource } from "../src/engine.js";
+import { browserCoreSource, soloCoreSource } from "../src/game-core.js";
+import { runInNewContext } from "node:vm";
 
 test("Rain is absent from every power-up set and starter capsule", () => {
   const engine = brickEngine();
@@ -19,6 +21,26 @@ test("Rain is absent from every power-up set and starter capsule", () => {
 
 const crtArena = { cols: 13, rows: 13, cell: 6, width: 584, height: 584, gridX: 100, gridY: 100, square: true };
 const crtBoard = { hp: "1".repeat(169), colors: "1".repeat(169), powerups: "0".repeat(169), remaining: 169, total: 169 };
+
+for (const [page, core] of [["Solo", soloCoreSource], ["Multiplayer", browserCoreSource]]) {
+  test(`${page} browser Mitosis keeps stepping after brick hits and respects its split limit`, () => {
+    const E = runInNewContext(core + "\n" + engineSource + "\nbrickEngine(() => .5)");
+    const board = { ...crtBoard, hp: "4" + "1".repeat(168) };
+    const S = E.create({ arena: crtArena, board, mode: "solo", set: "vintage", players: [{ id: "player", seat: 0 }] });
+    S.players[0].fx.mitosis = 5;
+    S.balls = [{ x: 97, y: 103, vx: 300, vy: 0, owner: "player", source: "player" }];
+    for (let hit = 0; hit < 10; hit++) {
+      Object.assign(S.balls[0], { x: 97, y: 103, vx: 300, vy: 0 });
+      E.step(S, 1 / 60);
+      assert.equal(S.balls.length, 1 + Math.min(hit + 1, 6));
+    }
+    assert.equal(S.players[0].mitosisSplits, 6);
+    for (let frame = 0; frame < 360; frame++) E.step(S, 1 / 60);
+    assert.ok(S.clock > 5, "the simulation continues beyond the effect duration");
+    assert.ok(S.players[0].fx.mitosis <= 0);
+    assert.ok(S.balls.every(b => [b.x, b.y, b.vx, b.vy].every(Number.isFinite)));
+  });
+}
 
 function collectVintage(kind) {
   const E = brickEngine(() => 0.5);

@@ -1,5 +1,4 @@
 import { aimVelocity, normalizeBallVelocity, ballSpeed } from "./game-core.js";
-const MITOSIS_EXTRA_BALLS=6;
 
 // The one BRICKS simulation, shared by Solo (in the browser) and Multiplayer (in the room).
 // Solo is the one-player case: a single paddle on the bottom edge. Every paddle rule is written in the
@@ -7,6 +6,7 @@ const MITOSIS_EXTRA_BALLS=6;
 // State is plain data (typed arrays included) so a room can store it; drawing and sound react to the
 // events each call returns.
 function brickEngine(rng=Math.random){
+ const MITOSIS_EXTRA_BALLS=6;
  const PU_SETS={
   clean:[
    {id:'plus3',ic:'+3',nm:'+3 BALLS',c:'#3fa9d8'},
