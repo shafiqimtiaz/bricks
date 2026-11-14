@@ -62,7 +62,7 @@ test("liminal rankings and menus keep essential actions with no arcade decoratio
   assert.match(html,/setAttribute\(['"]aria-label['"],(?:opened|expanded)\?['"]Close menu['"]:['"]Open menu['"]\)/);
   assert.match(html,/#hud(?: #hudMenu)?\[hidden\]\{display:none!important\}|#hudMenu\[hidden\]\{display:none!important\}/);
  }
- assert.match(soloHtml,/e.target.id!=='soundToggle'&&e.target.id!=='soloMode'/);
+ assert.match(soloHtml,/e.target.id!=='soundToggle'&&e.target.id!=='sensitivityToggle'&&e.target.id!=='soloMode'/);
  assert.match(soloHtml,/P\('soloMode'\)\.textContent = soloMode === 'infinite' \? 'INFINITE' : 'CLASSIC'/);
 });
 
