@@ -209,9 +209,10 @@ html,body,body *{font-family:'Press Start 2P',ui-monospace,monospace!important}
 @keyframes crtGlassRoll{from{background-position:0 -25%}to{background-position:0 125%}}
 @media(prefers-reduced-motion:reduce){#crt{display:block!important;animation:none!important}#crt::after{animation:none!important}}
 
+#hud #hudMenu{max-height:calc(var(--u)*92);overflow-y:auto;overscroll-behavior:contain}
 #hud #hudMenu .menuIdentity{padding:calc(var(--u)*2.3);border-bottom:1px solid #607f6a55;color:#d7e0dc;text-wrap:balance}
 #hud #hudMenu .menuIdentity strong{display:block;font-size:calc(var(--u)*2.2);letter-spacing:.04em}
-#hud #hudMenu .menuIdentity small{display:block;margin-top:calc(var(--u)*2);font-size:calc(var(--u)*1.05);line-height:1.75;color:#a5b3a7;text-transform:uppercase}
+#hud #hudMenu .menuIdentity small{display:block;margin-top:calc(var(--u)*2);font-size:clamp(7px,calc(var(--u)*1.5),10px);line-height:1.75;color:#a5b3a7;text-transform:uppercase}
 #nameInput{font-size:10px;line-height:1.7;letter-spacing:.01em}
 #nameError{font-size:8px;line-height:1.8}
 #nameModal,#nameForm{border-radius:2px}
