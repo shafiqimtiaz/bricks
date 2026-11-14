@@ -519,13 +519,13 @@ test("rapid repeated join or create clicks cannot reserve duplicate players", as
  let calls=0;
  const elements={create:{},join:{},acceptInvite:{},joinCode:{value:"ABCDE2"}};
  const storage={setItem(){}};
- const createFlow=new Function("$","request","enter","localStorage","error","name","window",
+ const createFlow=new Function("$","request","enter","localStorage","error","name","window","leaderboardId","rememberName",
   client.slice(from,to)+"return {doCreate,doJoin,isJoining:()=>joining};");
  const flow=createFlow(id=>elements[id],async (path,body)=>{
   calls++;
   await new Promise(resolve=>{release=resolve;});
   return {code:"ABCDE2",you:"new-player",resumed:false};
- },async()=>{},storage,()=>{},()=>"PlayerOne",{innerWidth:390,innerHeight:844});
+ },async()=>{},storage,()=>{},()=>"PlayerOne",{innerWidth:390,innerHeight:844},()=>"123e4567-e89b-12d3-a456-426614174000",()=>{});
  const first=flow.doJoin();
  assert.equal(flow.isJoining(),true);
  await flow.doJoin();
