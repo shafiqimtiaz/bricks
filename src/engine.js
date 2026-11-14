@@ -1,5 +1,5 @@
 import { aimVelocity, normalizeBallVelocity, ballSpeed } from "./game-core.js";
-const MITOSIS_MAX_BALLS=2500;
+const MITOSIS_EXTRA_BALLS=6;
 
 // The one BRICKS simulation, shared by Solo (in the browser) and Multiplayer (in the room).
 // Solo is the one-player case: a single paddle on the bottom edge. Every paddle rule is written in the
@@ -82,7 +82,7 @@ function brickEngine(rng=Math.random){
    pool:o.mode==='versus'?0:(o.lives??5),maxLives:o.maxLives??Infinity,
    fx:{},luckyLeft:0,laserCd:0,
    players:o.players.map(p=>({id:p.id,seat:p.seat,online:p.online!==false,out:false,lives:o.mode==='versus'?(o.lives??4):0,
-    c:0,target:0,pw:0,aim:0,fx:{},score:0,brickScore:0,bricksBroken:0,combo:0,comboT:0,maxCombo:0,milestone:0})),
+   c:0,target:0,pw:0,aim:0,fx:{},mitosisSplits:0,score:0,brickScore:0,bricksBroken:0,combo:0,comboT:0,maxCombo:0,milestone:0})),
    balls:[],pups:[],lasers:[],misses:[]
   };
   for(const p of S.players){p.pw=basePaddle(S);const [lo,hi]=edgeSpan(S,p.seat);p.c=p.target=(lo+hi)/2;}
@@ -181,10 +181,11 @@ function brickEngine(rng=Math.random){
  }
  function splitOnBrick(b){
   const owner=player(S,b.owner);
-  if(!owner||!(owner.fx.mitosis>0)||S.balls.length>=MITOSIS_MAX_BALLS)return;
+  if(!owner||!(owner.fx.mitosis>0)||owner.mitosisSplits>=MITOSIS_EXTRA_BALLS||S.balls.length>=S.maxBalls)return;
   const clone={x:b.x,y:b.y,vx:0,vy:0,owner:b.owner,source:b.source};
   setVel(S,clone,Math.atan2(b.vx,-b.vy)+(rng()-.5)*.5);
   S.balls.push(clone);
+  owner.mitosisSplits++;
  }
  let inChain=false;
  function hitCell(i,owner){
@@ -234,6 +235,7 @@ function brickEngine(rng=Math.random){
  }
  function applyPU(d,pup,p){
   if(d.t){if(d.own)p.fx[d.id]=d.t;else S.fx[d.id]=d.t;}
+  if(d.id==='mitosis')p.mitosisSplits=0;
   const snap=S.balls.length,hz=horizontal(p.seat);
   switch(d.id){
    case 'plus3':fromPaddle(p,[-.35,0,.35]);break;

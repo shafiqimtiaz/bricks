@@ -71,14 +71,12 @@ test("CRT MITOSIS duplicates a ball on a brick bounce only while active", () => 
   E.step(S, 1 / 60);
   assert.equal(S.balls.length, 1, "the effect stops duplicating after it expires");
 
-  const M = brickEngine(() => .5);
-  const multiplayer = M.create({ arena: crtArena, board, mode: "versus", set: "vintage", maxBalls: 40,
-    players: [{ id: "player", seat: 0 }] });
-  multiplayer.players[0].fx.mitosis = 5;
-  multiplayer.balls = [{ x: 97, y: 103, vx: 300, vy: 0, owner: "player", source: "player" },
-    ...Array.from({ length: 39 }, () => ({ x: 200, y: 200, vx: 0, vy: 0, owner: "player", source: "player", held: true }))];
-  M.step(multiplayer, 1 / 60);
-  assert.equal(multiplayer.balls.length, 41, "Mitosis can flood past the ordinary multiplayer ball limit");
+  const limited = E.create({ arena: crtArena, board, mode: "solo", set: "vintage", players: [{ id: "player", seat: 0 }] });
+  limited.players[0].fx.mitosis = 5;
+  limited.players[0].mitosisSplits = 6;
+  limited.balls = [{ x: 97, y: 103, vx: 300, vy: 0, owner: "player", source: "player" }];
+  E.step(limited, 1 / 60);
+  assert.equal(limited.balls.length, 1, "one activation creates at most six extra balls");
 });
 
 test("CRT NUKE hits only a 5 by 5 brick area", () => {
