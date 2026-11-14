@@ -63,7 +63,7 @@ function eliminate(r,id){
 }
 function clamp(n,a,b){return Math.min(b,Math.max(a,n));}
 export class BrickRoom extends DurableObject{
- constructor(ctx,env){super(ctx,env);this.ctx=ctx;this.env=env;this.room=null;this.loop=null;this.lastTick=0;this.lastSave=0;this.sent=null;this.pending=[];this.evCount={};ctx.blockConcurrencyWhile(async()=>{this.room=await ctx.storage.get("room")||null;if(this.room){
+ constructor(ctx,env){super(ctx,env);this.ctx=ctx;this.room=null;this.loop=null;this.lastTick=0;this.lastSave=0;this.sent=null;this.pending=[];this.evCount={};ctx.blockConcurrencyWhile(async()=>{this.room=await ctx.storage.get("room")||null;if(this.room){
   if(!this.room.arena)this.room.arena=arenaLayout();
   // A room stored before the engine existed has no simulation to continue: it goes back to its lobby.
   if(this.room.status!=="waiting"&&!this.room.sim){this.room.status="waiting";this.room.board=this.room.mode==="infinite"?infiniteOpeningBoard(this.room.seed||this.room.code.toLowerCase(),this.room.arena,Math.max(2,this.room.players.length)):bricks(this.room.seed||this.room.code.toLowerCase(),Math.max(2,this.room.players.length),this.room.arena);this.room.generatorVersion=4;}
