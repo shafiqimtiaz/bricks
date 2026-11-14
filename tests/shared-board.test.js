@@ -50,7 +50,7 @@ test("new player names use varied adjective–noun combinations in both modes",(
  assert.ok(new Set(names).size>1);
  assert.match(browserCoreSource,/function randomPlayerName\(\)/);
  assert.match(soloCoreSource,/function randomPlayerName\(\)/);
- assert.match(soloHtml,/myName=randomPlayerName\(\)/);
+ assert.match(soloHtml,/const previewName=myName\|\|randomPlayerName\(\)/);
 });
 
 test("paddle rotations use Solo's exact angular response and ball speed",()=>{
@@ -239,35 +239,35 @@ test("room-specific invitations take priority, legacy query invites do not join"
  assert.match(html,/id="acceptInvite"/);
 });
 
-test("invited players get editable generated names and retain saved names", async () => {
+test("unnamed invitees use temporary names and confirmed names reappear", async () => {
  const client=html.slice(html.indexOf("<script>")+8,html.lastIndexOf("</script>"));
  const nameStart=client.indexOf("function name(){"),nameEnd=client.indexOf("function waiting(",nameStart);
- const $=()=>({value:""});
- const readName=new Function("$",client.slice(nameStart,nameEnd)+"return name;");
- assert.throws(()=>readName($)(),/gamer name/);
- assert.throws(()=>readName(()=>({value:"!"}))(),/gamer name/);
- assert.equal(readName(()=>({value:"  Brick Master  "}))(),"Brick Master");
+ const readName=new Function("$","NAME_RE","randomPlayerName",client.slice(nameStart,nameEnd)+"return name;");
+ const selected=value=>readName(()=>({value}),/^[\\p{L}\\p{N} _.-]{2,24}$/u,()=>"Hollow Lantern")();
+ assert.equal(selected(""),"Hollow Lantern","Blank input uses a temporary room alias");
+ assert.throws(()=>selected("!"),/gamer name/);
+ assert.equal(selected("  Brick Master  "),"Brick Master");
  const from=client.indexOf("function showInvitePrompt("),to=client.indexOf("function openNicknamePrompt(",from);
  const ui={joinCode:{},inviteCode:{},playerName:{value:"StoredName",focus(){}},roomActions:{},inviteDetails:{},panel:{},intro:{},room:{}};
- const build=new Function("$","enter","error","localStorage","randomPlayerName",client.slice(from,to)+"return {showInvitePrompt,loadInvite};");
- const storage={getItem:()=>null};
- const events=[],gate=build(id=>ui[id],async code=>{events.push(["check",code]);throw Object.assign(new Error("Join the lobby first"),{status:401});},message=>events.push(["error",message]),storage,()=>"Hollow Lantern");
+ const build=new Function("$","enter","error","profileName",client.slice(from,to)+"return {showInvitePrompt,loadInvite};");
+ const events=[];
+ const gate=build(id=>ui[id],async code=>{events.push(["check",code]);throw Object.assign(new Error("Join the lobby first"),{status:401});},message=>events.push(["error",message]),"");
  await gate.loadInvite("ABCD23");
  assert.deepEqual(events,[["check","ABCD23"]]);
- assert.equal(ui.playerName.value,"Hollow Lantern");
+ assert.equal(ui.playerName.value,"","New players are not required to choose a name to join");
  assert.equal(ui.inviteDetails.hidden,false);
  assert.equal(ui.roomActions.hidden,true);
  assert.equal(ui.joinCode.value,"ABCD23");
- const returning=build(id=>ui[id],async code=>events.push(["resumed",code]),message=>events.push(["error",message]),storage,()=>"Hollow Lantern");
+ const returning=build(id=>ui[id],async code=>events.push(["resumed",code]),message=>events.push(["error",message]),"");
  ui.inviteDetails.hidden=true;events.length=0;
  await returning.loadInvite("ABCD23");
  assert.deepEqual(events,[["resumed","ABCD23"]]);
  assert.equal(ui.inviteDetails.hidden,true);
- const named=build(id=>ui[id],async()=>{},()=>{},{getItem:()=>"My Own Name"},()=>"Pale Visitor");
+ const named=build(id=>ui[id],async()=>{},()=>{},"My Own Name");
  named.showInvitePrompt("ABCD23");
  assert.equal(ui.playerName.value,"My Own Name");
- assert.match(client,/await joinRoom\(code,displayName\)/);
- assert.match(client,/const displayName=name\(\)/);
+ assert.match(client,/await joinRoom\\(code,displayName\\)/);
+ assert.match(client,/const displayName=name\\(\\)/);
 });
 
 test("brick changes redraw only changed cells rather than all tiles", () => {
@@ -508,11 +508,11 @@ test("lobby pointer movement cannot move a paddle before a round starts", () => 
 
 test("rapid repeated join or create clicks cannot reserve duplicate players", async () => {
  const client=html.slice(html.indexOf("<script>")+8,html.lastIndexOf("</script>"));
- const from=client.indexOf("let joining=false;"),to=client.indexOf("function showInvitePrompt(",from);
+ const from=client.indexOf("let joining=false,lastPromptedRound="),to=client.indexOf("function showInvitePrompt(",from);
  assert.ok(from>=0&&to>from);
  let release;
  let calls=0;
- const elements={create:{},join:{},acceptInvite:{},joinCode:{value:"ABCDE2"}};
+ const elements={create:{},join:{},acceptInvite:{},joinCode:{value:"ABCDE2"},playerName:{value:""}};
  const storage={setItem(){}};
  const createFlow=new Function("$","request","enter","localStorage","error","name","window",
   client.slice(from,to)+"return {doCreate,doJoin,isJoining:()=>joining};");
