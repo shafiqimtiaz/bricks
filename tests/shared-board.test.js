@@ -195,7 +195,8 @@ test("both render canvases use relative control input rather than a slider", () 
   assert.match(html, /for\(const canvas of \[cv,gcv\]\)/);
   assert.match(html, /#c,#g\{touch-action:none\}/);
   assert.match(html, /event\.currentTarget\.getBoundingClientRect\(\)/);
-  assert.match(html, /if\(y>=viewH-90\)\{controlDrag=/);
+  assert.match(html, /if\(y>=viewH-90\)\{/);
+  assert.match(html, /controlDrag=\{id:event\.pointerId,x:event\.clientX\}/);
   assert.match(html, /const dx=\(event\.clientX-previousX\)\/width\*sensitivity\(\)/);
   assert.doesNotMatch(html, /trackStart=|send\(sliderPos/);
 });
