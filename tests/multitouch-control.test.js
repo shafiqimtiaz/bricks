@@ -48,6 +48,12 @@ test("solo: two fingers move aim and paddle independently across the two zones",
   near(me.aim, (320 / 360 - .5) * 2.3);
   listeners.pointermove(e(3, 20, 580, "mouse"));
   near(me.aim, (320 / 360 - .5) * 2.3, "mouse below the divider cannot change aim");
+  near(me.target, 212.5, "entering the lower zone cannot jump the paddle");
+  listeners.pointermove(e(3, 60, 580, "mouse"));
+  near(me.target, 238.5, "moving the mouse below the divider glides the paddle");
+  listeners.pointerleave();
+  listeners.pointermove(e(3, 300, 580, "mouse"));
+  near(me.target, 238.5, "re-entering the lower zone cannot jump the paddle");
   listeners.pointerdown(e(4, 80, 220));
   listeners.pointerup(e(4, 80, 220));
   assert.equal(launches, 1, "a short tap above the divider launches");
@@ -93,7 +99,12 @@ test("multiplayer: aim and paddle respond to separate concurrent touches on the 
   near(aim, (280 / 360 - .5) * 2.3);
   listeners.pointermove(e(33, 10, 600, "mouse"));
   near(aim, (280 / 360 - .5) * 2.3);
-  near(getPosition(), .5 + 70 / 360 * .65);
+  near(getPosition(), .5 + 70 / 360 * .65, "entering below cannot jump the paddle");
+  listeners.pointermove(e(33, 50, 600, "mouse"));
+  near(getPosition(), .5 + 110 / 360 * .65);
+  listeners.pointerleave();
+  listeners.pointermove(e(33, 250, 600, "mouse"));
+  near(getPosition(), .5 + 110 / 360 * .65, "re-entering below cannot jump");
   listeners.pointerdown(e(44, 100, 180));
   listeners.pointerup(e(44, 100, 180));
   assert.equal(launches, 1);
