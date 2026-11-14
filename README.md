@@ -34,13 +34,13 @@ For a manual deployment, log in once with `npx wrangler login` or set `CLOUDFLAR
 
 ### Cloudflare Workers Builds (GitHub)
 
-The existing Worker `bricks-asmr` is linked to [shafiqimtiaz/bricks-asmr](https://github.com/shafiqimtiaz/bricks-asmr). Workers Builds watches `main` and deploys from the repository root.
+The Worker `bricks` is linked to [shafiqimtiaz/bricks-asmr](https://github.com/shafiqimtiaz/bricks-asmr). Workers Builds watches `main` and deploys from the repository root.
 
 | Setting | Value |
 | --- | --- |
 | Production branch | `main` |
 | Root directory | `/` |
-| Build command | `npm run build` |
+| Build command | `npm test && npm run build` |
 | Deploy command | `npm run deploy` |
 | Preview builds | Disabled |
 | Build Node.js version | 24 (Cloudflare's default) |
