@@ -713,9 +713,10 @@ function toLogical(e){
   return [u * W, v * H];
 }
 // Touching the lower zone never jumps; an independent upper pointer adjusts aim.
-let controlDrag=null,aimDrag=null;
+let controlDrag=null,aimDrag=null,mouseControlX=null;
 wrap.addEventListener('pointerdown',e=>{
   if(e.target.tagName!=='CANVAS'||paused)return;
+  if(e.pointerType==='mouse')mouseControlX=null;
   const [,ly]=toLogical(e);
   if(ly>=SZONE){
     if(controlDrag)return;
@@ -740,9 +741,18 @@ wrap.addEventListener('pointermove',e=>{
     if(aimDrag.moved){E.setAim(S,'me',aimDragAngle(aimDrag.aim,dx,wrap.getBoundingClientRect().width));aimAng=me.aim;}
     return;
   }
-  if(e.pointerType==='mouse'&&!e.buttons&&!aimDrag&&!paused&&state==='aim'&&e.target.tagName==='CANVAS'){
+  if(e.pointerType==='mouse'&&!e.buttons&&!aimDrag&&!controlDrag&&!paused&&e.target.tagName==='CANVAS'){
     const [lx,ly]=toLogical(e);
-    if(ly<SZONE){E.setAim(S,'me',(lx/W-.5)*2.3);aimAng=me.aim;}
+    if(ly<SZONE){
+      mouseControlX=null;
+      if(state==='aim'){E.setAim(S,'me',(lx/W-.5)*2.3);aimAng=me.aim;}
+    }else{
+      if(mouseControlX!==null){
+        const dx=(e.clientX-mouseControlX)/wrap.getBoundingClientRect().width*W*sensitivity();
+        if(dx)E.setPaddle(S,'me',Math.max(pw/2,Math.min(W-pw/2,(me.target??px)+(fx.invert>0?-dx:dx))));
+      }
+      mouseControlX=e.clientX;
+    }
   }
 });
 wrap.addEventListener('pointerup',e=>{
@@ -757,6 +767,7 @@ wrap.addEventListener('pointercancel',e=>{
   if(controlDrag?.id===e.pointerId)controlDrag=null;
   if(aimDrag?.id===e.pointerId)aimDrag=null;
 });
+wrap.addEventListener('pointerleave',()=>{mouseControlX=null;});
 const keys = {};
 window.addEventListener('keydown', e => {
   if(!document.getElementById('panel').hidden||!document.getElementById('hudMenu').hidden)return;
