@@ -30,7 +30,7 @@ const block = `${START}\n${section}${END}`;
 
 let content = existsSync(file) ? readFileSync(file, "utf8") : "";
 if (!content) {
-  content = `# AGENTS.md\n\nAgent notes for bricks-asmr (Bricks ASMR: a brick-breaker game served from Cloudflare Workers).\n\n- Main branch deploys live to bricks.shafq.dev. Work on main; pull before pushing, the owner pushes his own commits often.\n- \`npm test\` runs the suite (\`node --test\`).\n- \`src/\` holds the game (solo.html, multiplayer.html, multi.js, engine.js, game-core.js); \`tests/\` holds the suite.\n\n${block}\n`;
+  content = `# AGENTS.md\n\nAgent notes for BRICKS (a a brick-breaker game served from Cloudflare Workers).\n\n- Main branch deploys live to bricks.shafq.dev. Work on main; pull before pushing, the owner pushes his own commits often.\n- \`npm test\` runs the suite (\`node --test\`).\n- \`src/\` holds the game (solo.html, multiplayer.html, multi.js, engine.js, game-core.js); \`tests/\` holds the suite.\n\n${block}\n`;
 } else if (content.includes(START) && content.includes(END)) {
   content = content.slice(0, content.indexOf(START)) + block + content.slice(content.indexOf(END) + END.length);
 } else {

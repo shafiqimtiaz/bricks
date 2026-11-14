@@ -1,6 +1,6 @@
 import { aimVelocity, normalizeBallVelocity, ballSpeed } from "./game-core.js";
 
-// The one Bricks ASMR simulation, shared by Solo (in the browser) and Multiplayer (in the room).
+// The one BRICKS simulation, shared by Solo (in the browser) and Multiplayer (in the room).
 // Solo is the one-player case: a single paddle on the bottom edge. Every paddle rule is written in the
 // owning player's own frame, so a paddle on any edge plays exactly like Solo's.
 // State is plain data (typed arrays included) so a room can store it; drawing and sound react to the
