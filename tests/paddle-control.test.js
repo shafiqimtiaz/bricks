@@ -41,7 +41,7 @@ test("solo touch surface moves the paddle by finger delta without jumping", () =
 });
 
 test("multiplayer lower surface uses the same no-jump delta, separate from serve aiming", () => {
-  const start = multiHtml.indexOf("let controlDrag=null;");
+  const start = multiHtml.indexOf("let controlDrag=");
   const end = multiHtml.indexOf("const MOVE_KEYS=", start);
   assert.ok(start > 0 && end > start);
   const listeners = {};

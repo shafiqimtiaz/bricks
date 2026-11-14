@@ -1033,29 +1033,43 @@ function boardPointer(event){
  if(useGL()){const k=FX[style].k,cx=u*2-1,cy=v*2-1;u=cx*(1+k*cy*cy)*.5+.5;v=cy*(1+k*cx*cx)*.5+.5;}
  return {x:u*viewW,y:v*viewH};
 }
-let controlDrag=null;
+let controlDrag=null,mouseControlX=null;
 function pointer(event,previousX){
  const width=event.currentTarget.getBoundingClientRect().width;
  const dx=(event.clientX-previousX)/width*sensitivity();
  if(dx)send(localPos+dx);
 }
-// The lower strip is a relative trackpad; the court remains reserved for serving.
+// Each control zone owns its own pointer, so aim and paddle can move together.
 for(const canvas of [cv,gcv]){
  canvas.addEventListener("pointerdown",event=>{
   if(state?.status!=="playing"||!$("hudMenu").hidden)return;
-  audioInit();
+  if(event.pointerType==="mouse")mouseControlX=null;
   const y=boardPointer(event).y;
-  if(y>=viewH-90){controlDrag={id:event.pointerId,x:event.clientX};drag=null;}
-  else if(holdingServe()){drag={id:event.pointerId,x:event.clientX,width:canvas.getBoundingClientRect().width,aim:aimAng,moved:false};controlDrag=null;}
-  else return;
+  if(y>=viewH-90){
+   if(controlDrag)return;
+   controlDrag={id:event.pointerId,x:event.clientX};
+  }else{
+   if(drag)return;
+   drag={id:event.pointerId,x:event.clientX,width:canvas.getBoundingClientRect().width,aim:aimAng,moved:false};
+  }
+  audioInit();
   try{canvas.setPointerCapture(event.pointerId);}catch(_){}
  });
  canvas.addEventListener("pointermove",event=>{
-  if(controlDrag?.id===event.pointerId){pointer(event,controlDrag.x);controlDrag.x=event.clientX;}
-  else if(drag?.id===event.pointerId){
+  if(controlDrag?.id===event.pointerId){
+   pointer(event,controlDrag.x);
+   controlDrag.x=event.clientX;
+  }else if(drag?.id===event.pointerId){
    const dx=event.clientX-drag.x;
    if(Math.abs(dx)>8)drag.moved=true;
    if(drag.moved)setAim(aimDragAngle(drag.aim,dx,drag.width));
+  }else if(event.pointerType==="mouse"&&!event.buttons&&!drag&&!controlDrag&&state?.status==="playing"&&$("hudMenu").hidden){
+   const point=boardPointer(event);
+   if(point.y<viewH-90){mouseControlX=null;setAim((point.x/viewW-.5)*2.3);}
+   else{
+    if(mouseControlX!==null)pointer(event,mouseControlX);
+    mouseControlX=event.clientX;
+   }
   }
  });
  canvas.addEventListener("pointerup",event=>{
@@ -1066,6 +1080,7 @@ for(const canvas of [cv,gcv]){
   if(drag?.id===event.pointerId)drag=null;
   if(controlDrag?.id===event.pointerId)controlDrag=null;
  });
+ canvas.addEventListener("pointerleave",()=>{mouseControlX=null;});
 }
 const MOVE_KEYS=["arrowleft","arrowright","a","d","arrowup","arrowdown","w","s"];
 const KEY_NUDGE=0.035;
