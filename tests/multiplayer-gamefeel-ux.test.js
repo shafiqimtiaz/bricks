@@ -60,7 +60,8 @@ test("missed balls travel past the paddle instead of being visually pinned to th
 
 test("serve prompt, live menu status and results wording",()=>{
  assert.match(multiHtml,/DRAG AIM · TAP LAUNCH/);
- assert.match(multiHtml,/SLIDE OR A \/ D/);
+ assert.match(multiHtml,/mouseControlX/);
+ assert.match(multiHtml,/if\(point\.y<viewH-90\)/);
  assert.match(multiHtml,/s\.status==="playing"\?" · "\+me\.lives\+" LIVES":""/);
  assert.match(multiHtml,/p\.out\?"○ OUT":"● LIVE"/);
  assert.match(multiHtml,/LAST PLAYER STANDING · SURVIVED WITH/);
