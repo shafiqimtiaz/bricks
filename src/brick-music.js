@@ -53,7 +53,10 @@ export function createBrickMusic() {
 
   let tune = tunes[0], position = 0, nextAt = 0, lifePitchDrop = 0, depthPitchDrop = 0;
 
+  let voices = [];
+
   function reset(seed = "") {
+    clearQueue();
     let hash = 2166136261;
     const key = String(seed);
     for (let i = 0; i < key.length; i++) hash = Math.imul(hash ^ key.charCodeAt(i), 16777619);
@@ -91,12 +94,14 @@ export function createBrickMusic() {
     const delay = Math.max(0, nextAt - now);
     if (delay > .15 + 1e-9) return false;
     const note = next();
-    soundKit.blip(note.frequency, note.volume, note.duration, note.wave, delay, pan);
+    voices = voices.filter(v => v.until > now);
+    const cancel = soundKit.blip(note.frequency, note.volume, note.duration, note.wave, delay, pan);
+    if (typeof cancel === "function") voices.push({cancel,until:now+delay+note.duration+.02});
     nextAt = now + delay + tune.step;
     return true;
   }
 
-  function clearQueue() { nextAt = 0; }
+  function clearQueue() { for (const voice of voices) voice.cancel(); voices = []; nextAt = 0; }
 
   return {
     reset, setLives, setDepth, next, hit, clearQueue,

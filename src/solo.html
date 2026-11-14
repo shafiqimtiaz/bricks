@@ -550,7 +550,7 @@ function react(e){
     case 'power': {
       const d = puDef(e.k);
       if (style !== 'clean') shake = d.bad ? 2 : 4;
-      // The effect itself, not a power-up name, announces what was collected.
+      showToast(d.nm,900);
       const base = 262 * Math.pow(2, (e.k - 1) / 12), seq = d.bad ? [12, 8, 5, 0] : [0, 4, 7, 12];
       seq.forEach((s, j) => setTimeout(() => { notesThisFrame = 0; blip(base * Math.pow(2, s / 12), 0.18, 0.15, d.bad ? 'square' : 'triangle'); }, j * 45));
       break;
@@ -568,7 +568,7 @@ function react(e){
         crushed = true; showMsg('CRUSHED!\ntap to restart');
         flashW = .8; shake = 12; vib([80, 40, 160]); [0, -3, -7, -12].forEach((s, j) => setTimeout(() => { notesThisFrame = 0; blip(110 * Math.pow(2, s / 12), .3, .3, 'square'); }, j * 110));
       } else { showMsg('out of lives\ntap to restart'); flashW = .5; }
-      onRunOver(e.reason);
+      if (e.reason !== 'cleared') onRunOver(e.reason);
       break;
   }
 }
@@ -644,6 +644,7 @@ function render(fs = 1){
   ctx.fillStyle=controlDrag?'#d9a596':'#7d9a8b';
   for(let x=px-pw/2+1;x<px+pw/2-1;x+=6)ctx.fillRect(x,SZONE+7,2,2);
   if (state === 'aim') { ctx.font = style === 'clean' ? 'bold 11px ui-monospace,monospace' : "8px 'Press Start 2P',monospace"; ctx.fillStyle = V ? '#9ff3ff' : '#eee'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('AIM ABOVE · TAP TO LAUNCH', W / 2, SY - 34);ctx.fillText('DRAG BELOW TO MOVE',W/2,SY-8); }
+  if (state === 'play') drawPowerStatus(ctx,E.PU_BY_ID,S.fx,me.fx,W,SY-26);
   ctx.save();
   if (style !== 'clean') { ctx.shadowColor = V ? '#01cdfe' : '#ff8a70'; ctx.shadowBlur = 10; }
   if (V) { const pg = ctx.createLinearGradient(px - pw / 2, 0, px + pw / 2, 0); pg.addColorStop(0, '#ff71ce'); pg.addColorStop(1, '#01cdfe'); ctx.fillStyle = pg; }
@@ -664,7 +665,7 @@ function render(fs = 1){
   // motion trails
   ctx.strokeStyle = V ? 'rgba(1,205,254,.35)' : style === 'clean' ? 'rgba(255,255,255,.18)' : 'rgba(255,220,200,.28)';
   ctx.lineWidth = BR * 1.3; ctx.lineCap = 'round'; ctx.beginPath();
-  for (let k = 0, n = Math.min(balls.length, 400); k < n; k++) { const b = balls[k]; ctx.moveTo(b.x - b.vx * 0.03, b.y - b.vy * 0.03); ctx.lineTo(b.x, b.y); }
+  for (let k = 0, n = introReducedMotion || balls.length > 24 ? 0 : balls.length; k < n; k++) { const b = balls[k]; ctx.moveTo(b.x - b.vx * 0.03, b.y - b.vy * 0.03); ctx.lineTo(b.x, b.y); }
   ctx.stroke(); ctx.lineCap = 'butt';
   ctx.fillStyle = V ? '#e8fdff' : '#fff'; ctx.beginPath();
   for (const b of balls) { ctx.moveTo(b.x + BR * Math.sqrt(scaleY / scaleX), b.y); roundArc(ctx,b.x, b.y, BR, 0, Math.PI * 2); }

@@ -98,7 +98,12 @@ test("opening the Solo menu or panel pauses the run; closing it resumes", () => 
   // behind it. Any overlay open (menu or panel) must freeze the sim,
   // the timer, and the visuals until it closes.
   assert.match(soloHtml, /let lives = MAX_LIVES, runTime = 0, timerOn = false, paused = false;/);
-  assert.match(soloHtml, /function syncPause\(\)\{ paused = !P\('hudMenu'\)\.hidden \|\| !P\('panel'\)\.hidden; \}/);
+  const pauseBody=soloHtml.match(/function syncPause\(\)\{([^}]+)\}/)[1];
+  for(const menuHidden of [true,false])for(const panelHidden of [true,false]){
+    const paused=new Function('P','brickMusic','let paused=false;'+pauseBody+';return paused;')(
+      id=>({hidden:id==='hudMenu'?menuHidden:panelHidden}),{clearQueue(){}});
+    assert.equal(paused,!menuHidden||!panelHidden);
+  }
   assert.match(soloHtml, /if \(!paused\) \{\s*if \(timerOn && !\(fx\.freeze > 0\) && \(state === 'play' \|\| state === 'aim'\)\) runTime \+= dt \* 1000;/);
   assert.match(soloHtml, /render\(paused \? 0 : dt \* 60\); postFX\(now\);/);
   assert.match(soloHtml, /P\('hudMenuToggle'\)\.onclick=\(\)=>\{const opened=P\('hudMenu'\)\.hidden;[\s\S]*?syncPause\(\);\};/);

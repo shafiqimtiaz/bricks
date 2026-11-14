@@ -997,6 +997,7 @@ function draw(now){
  ctx.font=small;
  if(live&&serve){ctx.fillStyle=V?"#9ff3ff":"#eee";ctx.fillText("DRAG AIM · TAP LAUNCH",viewW/2,viewH-72);}
 
+ if(live&&me&&!serve&&!me.out)drawPowerStatus(ctx,E.PU_BY_ID,s.fx,me.fx,viewW,viewH-42);
  if(live&&me&&me.out){
   const left=s.players.filter(p=>!p.out).length,half=Math.min(150,viewW/2-12);
   ctx.fillStyle=V?"rgba(26,5,51,.82)":"rgba(7,9,12,.8)";ctx.fillRect(view.cx-half,view.cy-34,half*2,68);
