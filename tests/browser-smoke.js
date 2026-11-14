@@ -47,10 +47,19 @@ try {
   const guestContext = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const guest = await pageAt(guestContext, `/multiplayer/${code}`);
   await guest.locator("#inviteDetails").waitFor({ state: "visible" });
-  assert.match(await guest.locator("#playerName").inputValue(), /^[A-Z][a-z]+ [A-Z][a-z]+$/, "New invitee receives an adjective–noun name");
-  await guest.locator("#playerName").fill("QA Guest");
+  assert.equal(await guest.locator("#playerName").inputValue(), "", "New invitee may enter a name later");
   await guest.locator("#acceptInvite").click();
+  await waitFor(guest, () => /^[A-Z][a-z]+ [A-Z][a-z]+$/.test(document.querySelector("#currentName")?.textContent || ""));
+  assert.equal(await guest.evaluate(() => localStorage.getItem("brick-asmr-name-confirmed")), null, "Generated name is not persisted");
+  await guest.locator("#editName").click();
+  await guest.locator("#nickname").fill("QA Guest");
+  await guest.locator("#saveName").click();
   await waitFor(guest, () => document.querySelector("#currentName")?.textContent === "QA Guest");
+  assert.deepEqual(await guest.evaluate(() => [
+    localStorage.getItem("brick-asmr-player-name"), localStorage.getItem("brick-asmr-name-confirmed")
+  ]), ["QA Guest", "1"], "A chosen name is saved for future games");
+  const returnVisit = await pageAt(guestContext, "/multiplayer");
+  assert.equal(await returnVisit.locator("#playerName").inputValue(), "QA Guest", "Returning players reuse their chosen name");
   await waitFor(host, () => document.querySelector("#playerCount")?.textContent?.includes("2 PADDLES"));
   await waitFor(guest, () => document.querySelector("#playerCount")?.textContent?.includes("2 PADDLES"));
   assert.equal(await host.locator("#statusText").textContent(), "MULTIPLAYER LOBBY", "Two connected players remain in lobby until host starts");
