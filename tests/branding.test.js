@@ -23,3 +23,11 @@ test("solo, leaderboard, share text, and install metadata use BRICKS", () => {
   assert.equal(JSON.parse(manifest).short_name, "BRICKS");
   for (const text of [soloHtml, board, read("pwa.js")]) assert.doesNotMatch(text, /Bricks ASMR|BRICKS ASMR|by Shafiq/i);
 });
+
+test("the Solo menu and both multiplayer lobby states expose the same horror warning", () => {
+  const warning="Brick Rooms Induce Claustrophobia. Keep Smiling.";
+  assert.match(soloHtml, /class="menuIdentity"/);
+  assert.ok(soloHtml.includes(warning));
+  assert.equal(multiHtml.split(warning).length - 1, 2);
+});
+
