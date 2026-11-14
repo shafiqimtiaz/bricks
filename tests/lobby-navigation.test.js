@@ -11,7 +11,7 @@ test("plain multiplayer navigation stays in the lobby instead of resuming an old
 test("the multiplayer lobby sends the same host viewport ratio used by Solo", () => {
   assert.match(soloHtml, /arenaLayout\(window\.innerWidth \/ window\.innerHeight\)/);
   assert.match(multiHtml, /arenaLayout\(window\.innerWidth\/window\.innerHeight\)/);
-  assert.ok(multiHtml.includes('request("",{name:displayName,aspect:window.innerWidth/window.innerHeight})'));
+  assert.ok(multiHtml.includes('request("",{name:displayName,aspect:window.innerWidth/window.innerHeight,playerId:leaderboardId()})'));
   assert.match(serverSource, /body:JSON\.stringify\(\{name,aspect:body\.aspect\}\)/);
 });
 
