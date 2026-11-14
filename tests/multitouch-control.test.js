@@ -60,7 +60,7 @@ test("solo: two fingers move aim and paddle independently across the two zones",
 });
 
 test("multiplayer: aim and paddle respond to separate concurrent touches on the same canvas", () => {
-  const start = multiHtml.indexOf("let controlDrag=null;");
+  const start = multiHtml.indexOf("let controlDrag=");
   const end = multiHtml.indexOf("const MOVE_KEYS=", start);
   assert.ok(start > 0 && end > start);
   const listeners = {}, captured = [];
