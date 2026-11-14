@@ -301,7 +301,7 @@ const lockedArena=/^\d{3,4}$/.test(arenaParam)&&Number(arenaParam)>=256&&Number(
 let arena = lockedArena||arenaLayout(window.innerWidth / window.innerHeight);
 let W = arena.width, H = arena.height, CS = arena.cell, COLS = arena.cols, ROWS = arena.rows;
 let GX = arena.gridX, GY = arena.gridY;
-const SY = 614, SZONE = 550, PY = 536, PH = 7, MAX_BALLS = 2500;
+const SY = 614, SZONE = 550, PY = 536, PH = 7, MAX_BALLS = 40;
 let BR = CS * .45, PU_R = CS * 1.5;
 
 // ---------- seeded RNG: game-core.js ----------
@@ -458,7 +458,7 @@ function brickNote(pan=0){if(soundOn)brickMusic.hit(soundKit,pan);}
 let S = null, me = null;
 let fx = {}, luckyLeft = 0, lasers = [], beams = [], rings = [], fxClock = 0;
 const FLOOR_Y = PY + 22, CRUSH_Y = PY - 10;
-let maxBalls = MAX_BALLS, perfEma = 16, perfWarned = false;
+let perfEma = 16;
 let drop = 0, combo = 0, comboPop = 0;
 let introT = 0, introBrand = false, conf = [], flashW = 0, squash = 0, crushed = false;
 const BRAND_INTRO_SEEN_KEY='bricks-brand-intro-v1';
@@ -500,7 +500,7 @@ function startBoard(){
   brickMusic.reset(seed);
   syncArena();
   genBoard();
-  S = E.create({arena, board, players: [{id: 'me', seat: 0}], mode: 'solo', set: style, lives: MAX_LIVES, daily: isDaily(), maxBalls, infinite: soloMode === 'infinite'});
+  S = E.create({arena, board, players: [{id: 'me', seat: 0}], mode: 'solo', set: style, lives: MAX_LIVES, daily: isDaily(), maxBalls: MAX_BALLS, infinite: soloMode === 'infinite'});
   me = S.players[0]; hp = S.hp; col = S.col; pu = S.pu;
   me.c = me.target = Math.max(me.pw / 2, Math.min(W - me.pw / 2, px));
   redrawAll(); syncURL();
@@ -755,7 +755,6 @@ function frame(now){
   }
   render(paused ? 0 : dt * 60); postFX(now);
   perfEma += ((now - (frame.prev || now)) - perfEma) * .05; frame.prev = now;
-  if (perfEma > 30 && balls.length > 600 && maxBalls > balls.length * .9) { maxBalls = S.maxBalls = Math.max(600, Math.floor(balls.length * .85)); if (!perfWarned) { perfWarned = true; showToast('smooth mode · ball cap ' + maxBalls); } }
   requestAnimationFrame(frame);
 }
 
@@ -818,10 +817,12 @@ wrap.addEventListener('pointerup',e=>{
   if(state==='aim')launch();
   else if(state==='clear'||state==='over')newBoard();
 });
-wrap.addEventListener('pointercancel',e=>{
+const releasePointer=e=>{
   if(controlDrag?.id===e.pointerId)controlDrag=null;
   if(aimDrag?.id===e.pointerId)aimDrag=null;
-});
+};
+wrap.addEventListener('pointercancel',releasePointer);
+wrap.addEventListener('lostpointercapture',releasePointer);
 wrap.addEventListener('pointerleave',()=>{mouseControlX=null;});
 const keys = {};
 window.addEventListener('keydown', e => {
@@ -831,7 +832,8 @@ window.addEventListener('keydown', e => {
   if (e.key === ' ') { if (state === 'aim') launch(); else if (state === 'clear') newBoard(); else if (state === 'over') newBoard(); }
 });
 window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
-window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
+window.addEventListener('blur', () => { controlDrag=aimDrag=null;mouseControlX=null; for (const k in keys) keys[k] = false; });
+window.addEventListener('orientationchange', () => { controlDrag=aimDrag=null;mouseControlX=null; });
 setInterval(() => { const d = (fx.invert > 0 ? -14 : 14) * W / 360 * sensitivity(); if (keys.arrowleft || keys.a) E.setPaddle(S, 'me', px - d); if (keys.arrowright || keys.d) E.setPaddle(S, 'me', px + d); if (state === 'aim') { const turn = (keys.arrowup || keys.w ? 1 : 0) - (keys.arrowdown || keys.s ? 1 : 0); if (turn) E.setAim(S, 'me', me.aim + turn * .02); } }, 16);
 
 const toast = document.getElementById('toast');

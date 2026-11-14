@@ -1096,10 +1096,12 @@ for(const canvas of [cv,gcv]){
   if(drag?.id===event.pointerId){if(!drag.moved)launch();drag=null;}
   if(controlDrag?.id===event.pointerId)controlDrag=null;
  });
- canvas.addEventListener("pointercancel",event=>{
+ const releasePointer=event=>{
   if(drag?.id===event.pointerId)drag=null;
   if(controlDrag?.id===event.pointerId)controlDrag=null;
- });
+ };
+ canvas.addEventListener("pointercancel",releasePointer);
+ canvas.addEventListener("lostpointercapture",releasePointer);
  canvas.addEventListener("pointerleave",()=>{mouseControlX=null;});
 }
 const MOVE_KEYS=["arrowleft","arrowright","a","d","arrowup","arrowdown","w","s"];
@@ -1119,7 +1121,8 @@ window.addEventListener("keydown",event=>{
  if(state?.status==="playing")event.preventDefault();
 });
 window.addEventListener("keyup",event=>{held[event.key.toLowerCase()]=false;});
-window.addEventListener("blur",()=>{for(const key of MOVE_KEYS)held[key]=false;});
+window.addEventListener("blur",()=>{drag=controlDrag=null;mouseControlX=null;for(const key of MOVE_KEYS)held[key]=false;});
+window.addEventListener("orientationchange",()=>{drag=controlDrag=null;mouseControlX=null;});
 $("create").addEventListener("click",()=>{audioInit();doCreate();});$("join").addEventListener("click",()=>{audioInit();doJoin();});
 $("joinCode").addEventListener("keydown",event=>{if(event.key==="Enter")doJoin();});
 $("acceptInvite").addEventListener("click",()=>{audioInit();doJoin();});

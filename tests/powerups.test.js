@@ -118,3 +118,38 @@ test("CRT former SOFTEN slot now grants one life", () => {
   const { S } = collectVintage(9);
   assert.equal(S.pool, 6);
 });
+
+test("default cap is a fixed 40 balls in native and both serialized engines", () => {
+  for (const core of [null, soloCoreSource, browserCoreSource]) {
+    const E = core ? runInNewContext(core + "\n" + engineSource + "\nbrickEngine(() => .5)") : brickEngine(() => .5);
+    const S = E.create({ arena: crtArena, board: crtBoard, mode: "solo", set: "vintage", players: [{ id: "player", seat: 0 }] });
+    assert.equal(S.maxBalls, 40);
+    const held = { x: 180, y: 535, vx: 0, vy: 0, held: true, owner: "player", source: "player" };
+    S.balls = [
+      { x: 97, y: 103, vx: 300, vy: 0, owner: "player", source: "player" },
+      ...Array.from({ length: 39 }, () => ({ ...held }))
+    ];
+    S.hp[0] = 4;
+    S.players[0].fx.mitosis = 5;
+    E.step(S, 1 / 60);
+    assert.equal(S.balls.length, 40, "existing balls stay when a collision reaches the cap");
+    S.balls.pop();
+    Object.assign(S.balls[0], { x: 97, y: 103, vx: 300, vy: 0 });
+    E.step(S, 1 / 60);
+    assert.equal(S.balls.length, 40, "a free slot is filled but the cap is never exceeded");
+  }
+});
+
+test("recollecting active Mitosis refreshes time without resetting the split budget", () => {
+  const { E, S } = collectVintage(1);
+  S.players[0].mitosisSplits = 6;
+  S.players[0].fx.mitosis = 1;
+  S.pups.push({ x: S.players[0].c, y: 535, k: 1, c: 6, r: 6, owner: "player" });
+  E.step(S, 1 / 60);
+  assert.equal(S.players[0].mitosisSplits, 6);
+  assert.ok(S.players[0].fx.mitosis > 4, "duration is refreshed");
+  S.players[0].fx.mitosis = 0;
+  S.pups.push({ x: S.players[0].c, y: 535, k: 1, c: 6, r: 6, owner: "player" });
+  E.step(S, 1 / 60);
+  assert.equal(S.players[0].mitosisSplits, 0, "a new activation after expiry gets a fresh budget");
+});
