@@ -164,12 +164,32 @@ body{--hud-life:#ff7a6b}
 #hud #hudStatus{display:block;white-space:normal;line-height:1.9;padding:calc(var(--u)*2);font-size:.85em;color:var(--lb-soft);border-bottom:1px solid var(--l-border)}
 #toast{top:16%;border-radius:2px;background:#05080add;color:#ced5ce;font-size:calc(var(--u)*2.1);letter-spacing:.1em;word-break:normal;padding:calc(var(--u)*2)}
 
-/* Sparse CRT controls: the menu stays inside the stage without covering the court. */
-#hud #hudMenu{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:min(86vw,calc(var(--u)*82));min-width:0;gap:calc(var(--u)*1);padding:calc(var(--u)*2);background:#060a09f7;border:1px solid #5d766755;border-radius:2px;box-shadow:0 24px 60px #000c}
-#hud #hudStatus{grid-column:1/-1;border-bottom:1px solid #ffffff15;padding:calc(var(--u)*2) calc(var(--u)*1.2) calc(var(--u)*3);font-size:.75em;color:#7c9289;line-height:1.7;letter-spacing:.03em}
-#hud #hudMenu a,#hud #hudMenu button{display:flex!important;align-items:center;justify-content:center;text-align:center;min-width:0;min-height:calc(var(--u)*11);padding:calc(var(--u)*1.5)!important;background:#ffffff05!important;border:1px solid #ffffff15!important;border-radius:1px;color:#a5b7ad!important;font-size:.8em!important;line-height:1.4;letter-spacing:.03em}
-#hud #hudMenu a:hover,#hud #hudMenu button:hover{background:#b8d9c90c!important;border-color:#91b2a050!important;color:#dce7df!important}
-#hud #hudMenu #soloMode,#hud #hudMenu button[aria-pressed="true"]{color:#c8e2d4!important;border-color:#91b2a04d!important}
+/* Compact CRT system menu. Gameplay remains visible around it. */
+#hud #hudMenu{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ left:50%;right:auto;top:calc(100% + var(--u)*2);transform:translateX(-50%);
+ width:min(82vw,320px);min-width:0;box-sizing:border-box;gap:0;padding:9px 12px 12px;
+ background:#070b09f2;border:1px solid #6b80734d;border-radius:2px;
+ box-shadow:0 14px 36px #000c
+}
+#hud #hudStatus{
+ grid-column:1/-1;padding:9px 5px 11px;border-bottom:1px solid #ffffff17;
+ font-size:clamp(7px,calc(var(--u)*1.55),9px);color:#758a7f;
+ line-height:1.65;letter-spacing:0;white-space:normal
+}
+#hud #hudMenu a,#hud #hudMenu button{
+ display:flex!important;align-items:center;justify-content:center;text-align:center;
+ min-width:0;min-height:42px;padding:8px 4px!important;
+ background:transparent!important;border:0!important;
+ border-bottom:1px solid #ffffff12!important;border-radius:0!important;
+ color:#aabbb0!important;font-size:clamp(8px,calc(var(--u)*1.55),10px)!important;
+ line-height:1.5;letter-spacing:0
+}
+#hud #hudMenu > :nth-child(2n+3){border-right:1px solid #ffffff12!important}
+#hud #hudMenu a:hover,#hud #hudMenu button:hover{
+ background:#c4dac60a!important;color:#e0e8df!important
+}
+#hud #hudMenu #soloMode,#hud #hudMenu button[aria-pressed="true"]{color:#c1d9c7!important}
 #hud #hudMenuToggle{border-radius:2px;background:#080e0cdd!important;border-color:#ffffff26!important;color:#c0d0c6!important;box-shadow:0 10px 30px #0008}
 #panel{background:#070b0aec;border-color:#52665977;border-radius:2px;box-shadow:0 22px 70px #000e;color:#d8e0db}
 #panel::before{display:none}
@@ -209,10 +229,19 @@ html,body,body *{font-family:'Press Start 2P',ui-monospace,monospace!important}
 @keyframes crtGlassRoll{from{background-position:0 -25%}to{background-position:0 125%}}
 @media(prefers-reduced-motion:reduce){#crt{display:block!important;animation:none!important}#crt::after{animation:none!important}}
 
-#hud #hudMenu{max-height:calc(var(--u)*92);overflow-y:auto;overscroll-behavior:contain}
-#hud #hudMenu .menuIdentity{padding:calc(var(--u)*2.3);border-bottom:1px solid #607f6a55;color:#d7e0dc;text-wrap:balance}
-#hud #hudMenu .menuIdentity strong{display:block;font-size:clamp(10px,calc(var(--u)*2.2),14px);letter-spacing:.04em}
-#hud #hudMenu .menuIdentity small{display:block;margin-top:calc(var(--u)*2);font-size:clamp(7px,calc(var(--u)*1.5),10px);line-height:1.75;color:#a5b3a7;text-transform:uppercase}
+#hud #hudMenu{max-height:min(75vh,520px);overflow-y:auto;overscroll-behavior:contain}
+#hud #hudMenu .menuIdentity{
+ grid-column:1/-1;padding:8px 5px 10px;border-bottom:1px solid #ffffff17;
+ color:#d8e5d8;text-wrap:balance;text-align:left
+}
+#hud #hudMenu .menuIdentity strong{
+ display:block;font-size:clamp(12px,calc(var(--u)*2.5),15px);
+ line-height:1.6;letter-spacing:.04em
+}
+#hud #hudMenu .menuIdentity small{
+ display:block;margin-top:4px;font-size:clamp(7px,calc(var(--u)*1.4),9px);
+ line-height:1.8;color:#91a598;text-transform:uppercase;letter-spacing:0
+}
 #nameInput{font-size:10px;line-height:1.7;letter-spacing:.01em}
 #nameError{font-size:8px;line-height:1.8}
 #nameModal,#nameForm{border-radius:2px}
