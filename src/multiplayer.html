@@ -356,7 +356,7 @@ html,body,body *{font-family:'Press Start 2P',ui-monospace,monospace!important}
     <a href="/">SOLO</a><span aria-current="page">MULTI</span>
    </nav>
    <label for="playerName" class="label">NAME</label>
-   <input id="playerName" maxlength="18" autocomplete="nickname" placeholder="NAME" required>
+   <input id="playerName" maxlength="24" autocomplete="nickname" placeholder="NAME" required>
    <div id="inviteDetails" hidden>
     <p>INVITED TO ROOM <strong id="inviteCode"></strong></p>
         <button id="acceptInvite" class="primary" type="button">JOIN LOBBY</button>
@@ -529,20 +529,33 @@ async function request(path,body){
 }
 function name(){
  const n=$("playerName").value.trim().normalize("NFKC");
- if(!/^[\p{L}\p{N} ._-]{2,18}$/u.test(n))throw Error("Enter a gamer name of 2–18 characters");
+ if(!/^[\p{L}\p{N} ._-]{2,24}$/u.test(n))throw Error("Enter a gamer name of 2–24 characters");
  return n;
+}
+function chosenName(){return localStorage.getItem("bricksPlayerNameConfirmed")==="1"?(localStorage.getItem("bricksPlayerName")||""):"";}
+function rememberName(value){
+ localStorage.setItem("bricksPlayerName",value);
+ localStorage.setItem("brick-asmr-player-name",value);
+ localStorage.setItem("bricksPlayerNameConfirmed","1");
+}
+function leaderboardId(){
+ let id=localStorage.getItem("brick-asmr-player-id")||"";
+ if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)){
+  id=crypto.randomUUID();localStorage.setItem("brick-asmr-player-id",id);
+ }
+ return id;
 }
 let joining=false;
 function waiting(b){$("create").disabled=$("join").disabled=$("acceptInvite").disabled=b;}
 async function joinRoom(code,displayName){
- const result=await request("/"+code+"/join",{name:displayName});
+ const result=await request("/"+code+"/join",{name:displayName,playerId:leaderboardId()});
  await enter(result.code,result.you);
  return result;
 }
 async function doCreate(){
  if(joining)return;
  joining=true;waiting(true);error("");
- try{const displayName=name();const result=await request("",{name:displayName,aspect:window.innerWidth/window.innerHeight});await enter(result.code,result.you);localStorage.setItem("bricksPlayerName",displayName);}
+ try{const displayName=name();const result=await request("",{name:displayName,aspect:window.innerWidth/window.innerHeight,playerId:leaderboardId()});await enter(result.code,result.you);rememberName(displayName);}
  catch(e){error(e.message);}finally{waiting(false);joining=false;}
 }
 async function doJoin(){
@@ -553,12 +566,12 @@ async function doJoin(){
   if(!/^[A-Z2-9]{6}$/.test(code))throw Error("Enter a valid six-character code");
   const displayName=name();
   await joinRoom(code,displayName);
-  localStorage.setItem("bricksPlayerName",displayName);
+  rememberName(displayName);
  }catch(e){error(e.message);}finally{waiting(false);joining=false;}
 }
 function showInvitePrompt(code){
  $("joinCode").value=code;$("inviteCode").textContent=code;
- $("playerName").value=localStorage.getItem("bricksPlayerName")||randomPlayerName();
+ $("playerName").value=chosenName();
  $("roomActions").hidden=true;$("inviteDetails").hidden=false;
  $("panel").hidden=false;$("intro").hidden=false;$("room").hidden=true;
  $("playerName").focus({preventScroll:true});
@@ -1110,7 +1123,7 @@ $("nicknameForm").addEventListener("submit",async event=>{
  event.preventDefault();$("nameError").textContent="";$("saveName").disabled=true;
  try{
   const result=await request("/"+roomCode+"/rename",{name:$("nickname").value.trim()});
-  $("playerName").value=result.name;localStorage.setItem("bricksPlayerName",result.name);
+  $("playerName").value=result.name;rememberName(result.name);
   const me=state?.players.find(p=>p.id===you);if(me)me.name=result.name;
   $("nicknameForm").hidden=true;render();
  }catch(e){$("nameError").textContent=e.message;}
@@ -1142,7 +1155,7 @@ window.addEventListener("keydown",event=>{if(event.key==="Escape"&&!$("hudMenu")
 // A mouse click should not leave focus on a HUD button, or the next key press would trigger it again.
 $("hud").addEventListener("click",event=>{if(event.detail>0)event.target.closest("button")?.blur();});
 resize();
-$("playerName").value=localStorage.getItem("bricksPlayerName")||randomPlayerName();
+$("playerName").value=chosenName();
 const invitedPath=location.pathname.match(/^\/multiplayer\/([A-Z2-9]{6})\/?$/i);
 if(invitedPath)loadInvite(invitedPath[1].toUpperCase());
 })();
