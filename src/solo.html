@@ -580,14 +580,14 @@ function render(fs = 1){
 
   // trajectory previews
   wrap.classList.toggle('aiming', state === 'aim');
-  if (state === 'aim') drawAimGuide(ctx, E.predict(S, 'me', 260), '#e4f4ec', onBoard && moved, S.balls.find(b => b.held && b.source === 'me'));
+  if (state === 'aim') drawAimGuide(ctx, E.predict(S, 'me', 260), '#e4f4ec', !!aimDrag?.moved, S.balls.find(b => b.held && b.source === 'me'));
 
   ctx.fillStyle='#121a18';ctx.fillRect(0,SZONE,W,H-SZONE);
   ctx.save();ctx.beginPath();ctx.rect(0,SZONE,W,H-SZONE);ctx.clip();
   ctx.strokeStyle='rgba(139,171,154,.10)';ctx.lineWidth=1;ctx.beginPath();
   for(let x=-(H-SZONE);x<W;x+=14){ctx.moveTo(x,SZONE);ctx.lineTo(x+H-SZONE,H);}
   ctx.stroke();ctx.restore();
-  ctx.fillStyle=sliding?'#d9a596':'#7d9a8b';
+  ctx.fillStyle=controlDrag?'#d9a596':'#7d9a8b';
   for(let x=px-pw/2+1;x<px+pw/2-1;x+=6)ctx.fillRect(x,SZONE+7,2,2);
   if (state === 'aim') { ctx.font = style === 'clean' ? 'bold 11px ui-monospace,monospace' : "8px 'Press Start 2P',monospace"; ctx.fillStyle = V ? '#9ff3ff' : '#eee'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('DRAG AIM · TAP LAUNCH', W / 2, SY - 34); }
   ctx.save();
@@ -712,36 +712,51 @@ function toLogical(e){
   if (useGL()) { const k = FX[style].k, cx = u * 2 - 1, cy = v * 2 - 1; u = (cx * (1 + k * cy * cy)) * .5 + .5; v = (cy * (1 + k * cx * cx)) * .5 + .5; }
   return [u * W, v * H];
 }
-// Touching the lower zone never jumps; only horizontal movement shifts the paddle.
-let downX=0,lastControlX=0,downAim=0,moved=false,sliding=false,onBoard=false,activePointer=null;
+// Touching the lower zone never jumps; an independent upper pointer adjusts aim.
+let controlDrag=null,aimDrag=null;
 wrap.addEventListener('pointerdown',e=>{
-  if(e.target.tagName!=='CANVAS'||activePointer!==null||paused)return;
-  audioInit();downX=lastControlX=e.clientX;moved=false;
+  if(e.target.tagName!=='CANVAS'||paused)return;
   const [,ly]=toLogical(e);
-  sliding=ly>=SZONE;onBoard=!sliding;downAim=aimAng;activePointer=e.pointerId;
+  if(ly>=SZONE){
+    if(controlDrag)return;
+    controlDrag={id:e.pointerId,x:e.clientX};
+  }else{
+    if(aimDrag)return;
+    aimDrag={id:e.pointerId,x:e.clientX,aim:me.aim,moved:false};
+  }
+  audioInit();
   try{wrap.setPointerCapture(e.pointerId);}catch(_){}
 });
 wrap.addEventListener('pointermove',e=>{
-  if(activePointer!==e.pointerId)return;
-  if(sliding){
-    const dx=(e.clientX-lastControlX)/wrap.getBoundingClientRect().width*W*sensitivity();
-    lastControlX=e.clientX;
+  if(controlDrag?.id===e.pointerId){
+    const dx=(e.clientX-controlDrag.x)/wrap.getBoundingClientRect().width*W*sensitivity();
+    controlDrag.x=e.clientX;
     if(dx)E.setPaddle(S,'me',Math.max(pw/2,Math.min(W-pw/2,(me.target??px)+(fx.invert>0?-dx:dx))));
     return;
   }
-  if(Math.abs(e.clientX-downX)>8)moved=true;
-  if(moved&&state==='aim'){E.setAim(S,'me',aimDragAngle(downAim,e.clientX-downX,wrap.getBoundingClientRect().width));aimAng=me.aim;}
+  if(aimDrag?.id===e.pointerId){
+    const dx=e.clientX-aimDrag.x;
+    if(Math.abs(dx)>8)aimDrag.moved=true;
+    if(aimDrag.moved){E.setAim(S,'me',aimDragAngle(aimDrag.aim,dx,wrap.getBoundingClientRect().width));aimAng=me.aim;}
+    return;
+  }
+  if(e.pointerType==='mouse'&&!e.buttons&&!aimDrag&&!paused&&state==='aim'&&e.target.tagName==='CANVAS'){
+    const [lx,ly]=toLogical(e);
+    if(ly<SZONE){E.setAim(S,'me',(lx/W-.5)*2.3);aimAng=me.aim;}
+  }
 });
-function endPtr(e){
-  if(activePointer!==e.pointerId)return;
-  activePointer=null;
-  const wasBoard=onBoard;sliding=false;onBoard=false;
-  if(!wasBoard||moved)return;
+wrap.addEventListener('pointerup',e=>{
+  if(controlDrag?.id===e.pointerId){controlDrag=null;return;}
+  if(aimDrag?.id!==e.pointerId)return;
+  const tap=!aimDrag.moved;aimDrag=null;
+  if(!tap)return;
   if(state==='aim')launch();
   else if(state==='clear'||state==='over')newBoard();
-}
-wrap.addEventListener('pointerup',endPtr);
-wrap.addEventListener('pointercancel',e=>{if(activePointer===e.pointerId){activePointer=null;sliding=false;onBoard=false;}});
+});
+wrap.addEventListener('pointercancel',e=>{
+  if(controlDrag?.id===e.pointerId)controlDrag=null;
+  if(aimDrag?.id===e.pointerId)aimDrag=null;
+});
 const keys = {};
 window.addEventListener('keydown', e => {
   if(!document.getElementById('panel').hidden||!document.getElementById('hudMenu').hidden)return;
