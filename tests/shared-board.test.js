@@ -243,7 +243,7 @@ test("unnamed invitees use temporary names and confirmed names reappear", async 
  const client=html.slice(html.indexOf("<script>")+8,html.lastIndexOf("</script>"));
  const nameStart=client.indexOf("function name(){"),nameEnd=client.indexOf("function waiting(",nameStart);
  const readName=new Function("$","NAME_RE","randomPlayerName",client.slice(nameStart,nameEnd)+"return name;");
- const selected=value=>readName(()=>({value}),/^[\\p{L}\\p{N} _.-]{2,24}$/u,()=>"Hollow Lantern")();
+ const selected=value=>readName(()=>({value}),/^[\p{L}\p{N} _.-]{2,24}$/u,()=>"Hollow Lantern")();
  assert.equal(selected(""),"Hollow Lantern","Blank input uses a temporary room alias");
  assert.throws(()=>selected("!"),/gamer name/);
  assert.equal(selected("  Brick Master  "),"Brick Master");
@@ -266,8 +266,8 @@ test("unnamed invitees use temporary names and confirmed names reappear", async 
  const named=build(id=>ui[id],async()=>{},()=>{},"My Own Name");
  named.showInvitePrompt("ABCD23");
  assert.equal(ui.playerName.value,"My Own Name");
- assert.match(client,/await joinRoom\\(code,displayName\\)/);
- assert.match(client,/const displayName=name\\(\\)/);
+ assert.match(client,/await joinRoom\(code,displayName\)/);
+ assert.match(client,/const displayName=name\(\)/);
 });
 
 test("brick changes redraw only changed cells rather than all tiles", () => {
