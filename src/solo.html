@@ -827,7 +827,7 @@ async function loadBoard(){
  if(seq===boardSeq)renderPanel();
 }
 async function ensureName(){
- if(nameConfirmed&&/^[\\p{L}\\p{N} _.-]{2,24}$/u.test(myName))return myName;
+ if(nameConfirmed&&/^[\p{L}\p{N} _.-]{2,24}$/u.test(myName))return myName;
  return new Promise(resolve=>{
   nameWaiter=resolve;P('nameInput').value='';P('nameError').textContent='';
   P('nameTitle').textContent='SAVE YOUR SCORE';P('nameCancel').hidden=true;
@@ -936,7 +936,7 @@ P('nameModal').addEventListener('keydown',e=>{
 P('nameForm').addEventListener('submit',async e=>{
  e.preventDefault();
  const name=P('nameInput').value.trim().normalize('NFKC');
- if(!/^[\\p{L}\\p{N} _.-]{2,24}$/u.test(name)){P('nameError').textContent='Use 2–24 letters, numbers, spaces, _ . or -';return;}
+ if(!/^[\p{L}\p{N} _.-]{2,24}$/u.test(name)){P('nameError').textContent='Use 2–24 letters, numbers, spaces, _ . or -';return;}
  myName=name;nameConfirmed=true;
  try{localStorage.setItem('brick-asmr-player-name',name);localStorage.setItem(PLAYER_NAME_KEY,name);localStorage.setItem(NAME_CONFIRMED_KEY,'1');}catch(e){}
  const pending=nameWaiter;nameWaiter=null;
