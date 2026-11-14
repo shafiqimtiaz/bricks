@@ -160,7 +160,7 @@ body{--hud-life:#ff7a6b}
 
 /* Liminal interface: retain the CRT and game animation layers unchanged. */
 #hud{justify-content:flex-end;min-height:0;padding:calc(var(--u)*1.2);border:0;background:transparent;box-shadow:none}
-#hud>#lvl,#hud>#lives,#hud>#tmr,#hud>.sp,#hudBar{display:none!important}
+#hud>#lvl,#hud>#tmr,#hud>.sp,#hudBar{display:none!important}
 #hud #hudStatus{display:block;white-space:normal;line-height:1.9;padding:calc(var(--u)*2);font-size:.85em;color:var(--lb-soft);border-bottom:1px solid var(--l-border)}
 #toast{top:16%;border-radius:2px;background:#05080add;color:#ced5ce;font-size:calc(var(--u)*2.1);letter-spacing:.1em;word-break:normal;padding:calc(var(--u)*2)}
 
@@ -242,6 +242,12 @@ html,body,body *{font-family:'Press Start 2P',ui-monospace,monospace!important}
  display:block;margin-top:4px;font-size:clamp(7px,calc(var(--u)*1.4),9px);
  line-height:1.8;color:#91a598;text-transform:uppercase;letter-spacing:0
 }
+#hud{justify-content:space-between}
+#hud>#score{display:block!important;margin-right:auto;color:#c2d9cc;font-size:calc(var(--u)*1.65);font-variant-numeric:tabular-nums;letter-spacing:.04em}
+#hud>#score{flex:0 1 auto;min-width:0;max-width:52%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#hud>#lives{display:flex!important;margin-right:0}
+#hud>#lives i{width:calc(var(--u)*2.1);height:calc(var(--u)*1.5)}
+#hud #hudMenu #sensitivityToggle{white-space:normal;line-height:1.6}
 #nameInput{font-size:10px;line-height:1.7;letter-spacing:.01em}
 #nameError{font-size:8px;line-height:1.8}
 #nameModal,#nameForm{border-radius:2px}
@@ -253,17 +259,17 @@ html,body,body *{font-family:'Press Start 2P',ui-monospace,monospace!important}
   <canvas id="c"></canvas>
   <canvas id="g"></canvas>
   <div id="hud">
-   <span id="lvl" class="chip">SEED</span><span id="lives" class="pips" role="img" aria-label="Lives"></span><span id="tmr" class="clock">0:00</span><span class="sp"></span>
+   <span id="score" class="score" aria-label="Score">SCORE 0</span><span id="lvl" class="chip">SEED</span><span id="lives" class="pips" role="img" aria-label="Lives"></span><span id="tmr" class="clock">0:00</span><span class="sp"></span>
    <button id="hudMenuToggle" type="button" aria-label="Open menu" aria-expanded="false">☰</button>
    <div id="hudBar" aria-hidden="true"><i id="hudFill"></i></div>
    <div id="hudMenu" hidden>
-    <div class="menuIdentity"><strong>BRICKS</strong><small>Brick Rooms Induce Claustrophobia. Keep Smiling.</small></div>
+    <div class="menuIdentity"><strong>BRICKS</strong></div>
     <div id="hudStatus" role="status"></div>
+    <button id="top" type="button">SCORES</button><a id="multi" href="/multiplayer" title="Multiplayer (2–4 players)" aria-label="Play multiplayer">MULTIPLAYER</a>
+    <button id="daily" type="button">DAILY</button><button id="newb" type="button">NEW RUN</button>
     <button id="soundToggle" type="button" aria-pressed="true">SOUND ON</button>
-    <button id="sensitivityToggle" type="button">SENS LOW</button>
-    <a id="multi" href="/multiplayer" title="Multiplayer (2–4 players)" aria-label="Play multiplayer">MULTI</a>
-    <button id="top" type="button">SCORES</button><button id="daily" type="button">DAILY</button>
-    <button id="share" type="button">SHARE</button><button id="newb" type="button">NEW RUN</button>
+    <button id="sensitivityToggle" type="button">SENSITIVITY LOW</button>
+    <button id="share" type="button">SHARE</button>
     <button id="soloMode" type="button" aria-label="Classic mode. Switch to Infinite">CLASSIC</button>
    </div>
   </div>
@@ -454,7 +460,11 @@ let fx = {}, luckyLeft = 0, lasers = [], beams = [], rings = [], fxClock = 0;
 const FLOOR_Y = PY + 22, CRUSH_Y = PY - 10;
 let maxBalls = MAX_BALLS, perfEma = 16, perfWarned = false;
 let drop = 0, combo = 0, comboPop = 0;
-let introT = 0, conf = [], flashW = 0, squash = 0, crushed = false;
+let introT = 0, introBrand = false, conf = [], flashW = 0, squash = 0, crushed = false;
+const BRAND_INTRO_SEEN_KEY='bricks-brand-intro-v1';
+const introReducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let brandIntroPending=false;
+try{brandIntroPending=!introReducedMotion&&localStorage.getItem(BRAND_INTRO_SEEN_KEY)!=='1';}catch(e){}
 const isDaily = () => /^d\d{8}$/.test(seed);
 function vib(p){ try { if (navigator.vibrate) navigator.vibrate(p); } catch(e) {} }
 let aimAng = 0, debris = [], floats = [], shake = 0, balls = [], pups = [], flashes = [], px = W / 2, pw = 64, state = 'aim';
@@ -496,11 +506,14 @@ function startBoard(){
   redrawAll(); syncURL();
   flashes = []; debris = []; floats = []; beams = []; rings = [];
   runTime = 0; timerOn = false;
-  introT = 1.8; conf = []; crushed = false;
+  introBrand=brandIntroPending;brandIntroPending=false;
+  if(introBrand){try{localStorage.setItem(BRAND_INTRO_SEEN_KEY,'1');}catch(e){}}
+  introT = introReducedMotion?0:introBrand?2.4:1.8; conf = []; crushed = false;
   hidePanel(); sync(); showMsg('');
 }
 function launch(){
   if (state !== 'aim') return;
+  introT=0;
   E.launch(S, 'me');
   
   showMsg(''); timerOn = true; sync();
@@ -623,7 +636,7 @@ function render(fs = 1){
   ctx.stroke();ctx.restore();
   ctx.fillStyle=controlDrag?'#d9a596':'#7d9a8b';
   for(let x=px-pw/2+1;x<px+pw/2-1;x+=6)ctx.fillRect(x,SZONE+7,2,2);
-  if (state === 'aim') { ctx.font = style === 'clean' ? 'bold 11px ui-monospace,monospace' : "8px 'Press Start 2P',monospace"; ctx.fillStyle = V ? '#9ff3ff' : '#eee'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('DRAG AIM · TAP LAUNCH', W / 2, SY - 34); }
+  if (state === 'aim') { ctx.font = style === 'clean' ? 'bold 11px ui-monospace,monospace' : "8px 'Press Start 2P',monospace"; ctx.fillStyle = V ? '#9ff3ff' : '#eee'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('AIM ABOVE · TAP TO LAUNCH', W / 2, SY - 34);ctx.fillText('DRAG BELOW TO MOVE',W/2,SY-8); }
   ctx.save();
   if (style !== 'clean') { ctx.shadowColor = V ? '#01cdfe' : '#ff8a70'; ctx.shadowBlur = 10; }
   if (V) { const pg = ctx.createLinearGradient(px - pw / 2, 0, px + pw / 2, 0); pg.addColorStop(0, '#ff71ce'); pg.addColorStop(1, '#01cdfe'); ctx.fillStyle = pg; }
@@ -695,13 +708,19 @@ function render(fs = 1){
   }
   // board intro card
   if (introT > 0) {
-    introT -= fs / 60; const a = Math.min(1, introT / .4, (1.8 - introT) / .25), off = (1 - Math.min(1, (1.8 - introT) / .3)) * -60;
-    ctx.globalAlpha = a * .8; ctx.fillStyle = V ? '#1a0533' : '#000'; ctx.fillRect(0, 210, W, 70);
+    const duration=introBrand?2.4:1.8;introT -= fs / 60;
+    const elapsed=duration-introT,a=Math.min(1,introT/.4,elapsed/.25),off=(1-Math.min(1,elapsed/.3))*-60;
+    const top=introBrand?190:210,height=introBrand?116:70;
+    ctx.globalAlpha = a * .8; ctx.fillStyle = V ? '#1a0533' : '#000'; ctx.fillRect(0, top, W, height);
     ctx.globalAlpha = a; ctx.fillStyle = V ? '#ff71ce' : style === 'clean' ? '#fff' : '#ffd166';
     ctx.font = style === 'clean' ? 'bold 22px ui-monospace,monospace' : "16px 'Press Start 2P',monospace";
-    ctx.fillText(isDaily() ? 'DAILY CHALLENGE' : 'SEED ' + seed.toUpperCase(), W / 2 + off, 236);
+    ctx.fillText(introBrand?'BRICKS':isDaily() ? 'DAILY CHALLENGE' : 'SEED ' + seed.toUpperCase(), W / 2 + off, introBrand?220:236);
     ctx.font = style === 'clean' ? '11px ui-monospace,monospace' : "7px 'Press Start 2P',monospace"; ctx.fillStyle = V ? '#9ff3ff' : '#ccc';
-    ctx.fillText(ARCH_NAMES[archetype].toUpperCase() + (quad ? ' · QUAD' : '') + (soloMode === 'infinite' ? ' · BRICKS KEEP COMING' : ' · LOST LIFE = ONE ROW DOWN'), W / 2 - off, 262);
+    if(introBrand){
+      ctx.fillText('BRICK ROOMS INDUCE',W/2-off,244);
+      ctx.fillText('CLAUSTROPHOBIA. KEEP SMILING.',W/2+off,260);
+      ctx.fillText((isDaily()?'DAILY '+seed.slice(1):'SEED '+seed.toUpperCase())+' · '+ARCH_NAMES[archetype].toUpperCase(),W/2-off,280);
+    }else ctx.fillText(ARCH_NAMES[archetype].toUpperCase() + (quad ? ' · QUAD' : '') + (soloMode === 'infinite' ? ' · BRICKS KEEP COMING' : ' · LOST LIFE = ONE ROW DOWN'), W / 2 - off, 262);
     ctx.globalAlpha = 1;
   }
   if (flashW > 0) { if (motion) { ctx.fillStyle = 'rgba(255,255,255,' + Math.min(.2,flashW) + ')'; ctx.fillRect(0, 0, W, H); } flashW *= Math.pow(.9, fs); if (flashW < .01) flashW = 0; }
@@ -720,6 +739,7 @@ function render(fs = 1){
   setText(hudLvl, isDaily() ? 'DAILY' : 'SEED ' + seed);
   if (hudLives.shown !== lives) { hudLives.shown = lives; const top = Math.max(MAX_LIVES, lives); let pips = ''; for (let k = 0; k < top; k++) pips += k < lives ? '<i></i>' : '<i class="off"></i>'; hudLives.innerHTML = pips; hudLives.setAttribute('aria-label', lives + ' lives'); }
   setText(hudTmr, fmtTime(runTime));
+  setText(document.getElementById('score'),'SCORE '+Math.round(me.brickScore).toLocaleString());
   setText(document.getElementById('hudStatus'), seed.toUpperCase()+' · '+lives+' LIVES · '+fmtTime(runTime));
   const cleared = total ? Math.round(1000 * (1 - remaining / total)) / 1000 : 0;
   if (hudFill.shown !== cleared) { hudFill.shown = cleared; hudFill.style.transform = 'scaleX(' + cleared + ')'; }
@@ -749,6 +769,7 @@ function toLogical(e){
 // Touching the lower zone never jumps; an independent upper pointer adjusts aim.
 let controlDrag=null,aimDrag=null,mouseControlX=null;
 wrap.addEventListener('pointerdown',e=>{
+  if(introT>0)introT=0;
   if(e.target.tagName!=='CANVAS'||paused)return;
   if(e.pointerType==='mouse')mouseControlX=null;
   const [,ly]=toLogical(e);
@@ -805,6 +826,7 @@ wrap.addEventListener('pointerleave',()=>{mouseControlX=null;});
 const keys = {};
 window.addEventListener('keydown', e => {
   if(!document.getElementById('panel').hidden||!document.getElementById('hudMenu').hidden)return;
+  if(introT>0)introT=0;
   audioInit(); keys[e.key.toLowerCase()] = true;
   if (e.key === ' ') { if (state === 'aim') launch(); else if (state === 'clear') newBoard(); else if (state === 'over') newBoard(); }
 });
@@ -843,7 +865,7 @@ try{
 if(!/^[\p{L}\p{N} _.-]{2,24}$/u.test(myName))myName='';
 const previewName=myName||randomPlayerName();
 function myBest(key){return Number.isFinite(localBest[key])?localBest[key]:undefined;}
-function setLinks(){P('pfull').href='/leaderboard?metric='+(panelMode==='over'?'score':'time');P('pname').textContent='Player: '+(myName||previewName)+' ✎';}
+function setLinks(){P('pfull').href='/leaderboard?metric='+(panelMode==='over'?'score':'time')+'&arena='+W+'&seed='+encodeURIComponent(seed);P('pname').textContent='Player: '+(myName||previewName)+' ✎';}
 async function loadBoard(){
  const seq=++boardSeq;boardKey=boardId();boardStatus='loading';boardRows=[];renderPanel();
  try{
@@ -988,13 +1010,13 @@ P('pbrag').onclick=()=>{
  const t='BRICKS · '+(isDaily()?'Daily '+seed.slice(1):'Seed '+seed)+'\nTime: '+fmtTime(lastTime)+(i>=0?' · World #'+(i+1):'')+'\nBeat me: '+shareURL();
  copyText(t,'Result copied');
 };
-P('top').onclick=()=>{location.href='/leaderboard?metric='+(soloMode==='infinite'?'score':'time');};
+P('top').onclick=()=>{location.href='/leaderboard?metric='+(soloMode==='infinite'?'score':'time')+'&arena='+W+'&seed='+encodeURIComponent(seed);};
 function syncPause(){ paused = !P('hudMenu').hidden || !P('panel').hidden; }
 P('hudMenuToggle').onclick=()=>{const opened=P('hudMenu').hidden;P('hudMenu').hidden=!opened;P('hudMenuToggle').setAttribute('aria-expanded',String(opened));P('hudMenuToggle').textContent=opened?'×':'☰';P('hudMenuToggle').setAttribute('aria-label',opened?'Close menu':'Open menu');if(opened){for(const k in keys)keys[k]=false;P('hudMenu').querySelector('a,button')?.focus();}syncPause();};
 function closeMenu(restoreFocus=false){const open=!P('hudMenu').hidden;P('hudMenu').hidden=true;P('hudMenuToggle').setAttribute('aria-expanded','false');P('hudMenuToggle').textContent='☰';P('hudMenuToggle').setAttribute('aria-label','Open menu');if(open&&restoreFocus===true)P('hudMenuToggle').focus();syncPause();}
 P('soundToggle').onclick=()=>{soundOn=!soundOn;P('soundToggle').textContent='SOUND '+(soundOn?'ON':'OFF');P('soundToggle').setAttribute('aria-pressed',String(soundOn));if(soundOn)audioInit();};
-P('sensitivityToggle').textContent='SENS '+SENS_NAMES[sensitivityLevel];
-P('sensitivityToggle').onclick=()=>{sensitivityLevel=(sensitivityLevel+1)%SENS_VALUES.length;try{localStorage.setItem(SENS_KEY,String(sensitivityLevel));}catch(e){}P('sensitivityToggle').textContent='SENS '+SENS_NAMES[sensitivityLevel];};
+P('sensitivityToggle').textContent='SENSITIVITY '+SENS_NAMES[sensitivityLevel];
+P('sensitivityToggle').onclick=()=>{sensitivityLevel=(sensitivityLevel+1)%SENS_VALUES.length;try{localStorage.setItem(SENS_KEY,String(sensitivityLevel));}catch(e){}P('sensitivityToggle').textContent='SENSITIVITY '+SENS_NAMES[sensitivityLevel];};
 P('hudMenu').addEventListener('click',e=>{if(e.target.id!=='soundToggle'&&e.target.id!=='sensitivityToggle'&&e.target.id!=='soloMode')closeMenu();});
 document.addEventListener('pointerdown',e=>{if(!e.target.closest('#hudMenu,#hudMenuToggle'))closeMenu();});
 window.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!P('nameModal').hidden)closeNameModal();else closeMenu(true);}});

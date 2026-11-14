@@ -83,6 +83,7 @@ test("all game screens use pixel type and the same curved CRT glass",()=>{
 });
 
 test("serve prompt tells the player how to aim and launch",()=>{
- assert.match(soloHtml,/DRAG AIM · TAP LAUNCH/);
+ assert.match(soloHtml,/AIM ABOVE · TAP TO LAUNCH/);
+ assert.match(soloHtml,/DRAG BELOW TO MOVE/);
  assert.match(multiHtml,/DRAG AIM · TAP LAUNCH/);
 });

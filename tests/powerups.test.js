@@ -51,6 +51,27 @@ test("CRT MITOSIS lasts five seconds", () => {
   assert.equal(S.players[0].fx.mitosis, 5);
 });
 
+test("CRT MITOSIS duplicates a ball on a brick bounce only while active", () => {
+  const E = brickEngine(() => .5);
+  const hp = "1" + "0".repeat(168);
+  const board = { hp, colors: "1".repeat(169), powerups: "0".repeat(169), remaining: 1, total: 1 };
+  const S = E.create({ arena: crtArena, board, mode: "solo", set: "vintage", players: [{ id: "player", seat: 0 }] });
+  S.players[0].fx.mitosis = 5;
+  S.balls = [{ x: 97, y: 103, vx: 300, vy: 0, owner: "player", source: "player" }];
+  E.step(S, 1 / 60);
+  assert.equal(S.balls.length, 2, "a brick bounce creates one extra ball");
+  assert.equal(S.remaining, 0);
+
+  S.players[0].fx.mitosis = 0;
+  S.hp[1] = 1;
+  S.remaining = 1;
+  S.rowCount[0]++;
+  S.colCount[1]++;
+  S.balls = [{ x: 103, y: 103, vx: 300, vy: 0, owner: "player", source: "player" }];
+  E.step(S, 1 / 60);
+  assert.equal(S.balls.length, 1, "the effect stops duplicating after it expires");
+});
+
 test("CRT NUKE hits only a 5 by 5 brick area", () => {
   const { S } = collectVintage(2);
   assert.equal(S.remaining, 169 - 25);

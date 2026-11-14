@@ -5,9 +5,9 @@ import { createBrickMusic } from "../src/brick-music.js";
 import { browserCoreSource, soloCoreSource } from "../src/game-core.js";
 import { soloHtml, multiHtml, serverSource, loadServer, makeRoom, roomInstance } from "./helpers.js";
 
-test("ten built-in public-domain tunes play without files or selection", () => {
+test("twelve recognizable pop tunes play without a file picker", () => {
   const music = createBrickMusic();
-  assert.equal(music.count, 10);
+  assert.equal(music.count, 12);
   for (let i = 0; i < 100; i++) {
     const title = music.reset("seed-" + i);
     assert.equal(typeof title, "string");
@@ -16,6 +16,9 @@ test("ten built-in public-domain tunes play without files or selection", () => {
     assert.ok(note.frequency >= 220 && note.frequency <= 2000);
     assert.ok(note.duration > 0 && note.duration < .5);
     assert.ok(["triangle", "sine", "square"].includes(note.wave));
+  }
+  for (const title of ["Billie Jean", "Numb", "Toxic", "Blinding Lights", "Dancing Queen"]) {
+    assert.ok(Array.from({ length: 100 }, (_, i) => music.reset("seed-" + i)).some(name => name.startsWith(title)));
   }
 });
 
@@ -85,7 +88,7 @@ test("same board or multiplayer round chooses the same tune, with varied seeds",
     assert.deepEqual(a.next(), b.next());
     choices.add(first);
   }
-  assert.equal(choices.size, 10);
+  assert.equal(choices.size, 12);
 });
 
 test("each hit plays the next note, loops at the end, and restarts on retry", () => {
@@ -135,6 +138,6 @@ test("solo and multiplayer use the same automatic music source", () => {
   assert.match(serverSource, /descentRows:S\?\.descent\?\.rows\|\|0/);
   for (const bundle of [soloCoreSource, browserCoreSource]) {
     assert.equal(runInNewContext(bundle + "\ntypeof createBrickMusic"), "function");
-    assert.equal(runInNewContext(bundle + "\ncreateBrickMusic().count"), 10);
+    assert.equal(runInNewContext(bundle + "\ncreateBrickMusic().count"), 12);
   }
 });

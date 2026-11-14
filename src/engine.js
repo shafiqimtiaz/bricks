@@ -178,6 +178,13 @@ function brickEngine(rng=Math.random){
   if(S.fx.fire>0){destroyCell(i,owner);return false;}
   hitCell(i,owner);return true;
  }
+ function splitOnBrick(b){
+  const owner=player(S,b.owner);
+  if(!owner||!(owner.fx.mitosis>0)||S.balls.length>=S.maxBalls)return;
+  const clone={x:b.x,y:b.y,vx:0,vy:0,owner:b.owner,source:b.source};
+  setVel(S,clone,Math.atan2(b.vx,-b.vy)+(rng()-.5)*.5);
+  S.balls.push(clone);
+ }
  let inChain=false;
  function hitCell(i,owner){
   if(S.hp[i]===4)return;
@@ -263,11 +270,11 @@ function brickEngine(rng=Math.random){
    for(let s=0;s<steps;s++){
     let nx=b.x+b.vx*sdt;
     let i=solid(S,nx+Math.sign(b.vx)*BR,b.y);
-    if(i>=0&&impact(i,b.owner)){b.vx=-b.vx;nx=b.x;}
+    if(i>=0&&impact(i,b.owner)){b.vx=-b.vx;nx=b.x;splitOnBrick(b);}
     if(!open[1]&&nx<S.wx+BR){nx=S.wx+BR;b.vx=Math.abs(b.vx);}else if(!open[3]&&nx>S.W-S.wx-BR){nx=S.W-S.wx-BR;b.vx=-Math.abs(b.vx);}
     let ny=b.y+b.vy*sdt;
     i=solid(S,nx,ny+Math.sign(b.vy)*BR);
-    if(i>=0&&impact(i,b.owner)){b.vy=-b.vy;ny=b.y;}
+    if(i>=0&&impact(i,b.owner)){b.vy=-b.vy;ny=b.y;splitOnBrick(b);}
     if(!open[2]&&ny<S.GY-4+BR){ny=S.GY-4+BR;b.vy=Math.abs(b.vy);}
     else if(!open[0]&&ny>544-BR){ny=544-BR;b.vy=-Math.abs(b.vy);}
     for(const seat of [0,2,1,3]){
@@ -281,7 +288,6 @@ function brickEngine(rng=Math.random){
        if(horizontal(seat))ny=f-o*BR;else nx=f-o*BR;
        b.owner=p.id;p.score+=2;
        ev.push({t:'paddle',owner:p.id,seat});
-       if(p.fx.mitosis>0&&S.balls.length<S.maxBalls)S.balls.push({x:nx,y:ny,owner:p.id,source:p.id,...aimVelocity(seat,-off*1.05+(rng()-.5)*.3,curSpeed(S))});
        hitPaddle=true;break;
       }
       if(hitPaddle)break;

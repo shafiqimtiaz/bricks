@@ -22,7 +22,7 @@ test("solo: two fingers move aim and paddle independently across the two zones",
   };
   new Function("wrap", "audioInit", "toLogical", "paused", "aimAng", "E", "S", "me", "px", "pw",
     "W", "SZONE", "fx", "sensitivity", "state", "launch", "newBoard", "aimDragAngle",
-    soloHtml.slice(start, end)
+    "let introT=0;"+soloHtml.slice(start, end)
   )(wrap, () => {}, e => [e.clientX, e.clientY], false, 0, engine, {}, me, 180, 64, 360, 550,
     { invert: 0 }, () => .65, "aim", () => launches++, () => {}, (aim, dx, width) => aim + dx / width * 2.3);
   const e = (id, x, y, pointerType = "touch") =>

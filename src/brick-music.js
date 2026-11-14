@@ -1,56 +1,53 @@
 export function createBrickMusic() {
-  // New, lightweight arcade arrangements of melodies in the public domain.
-  // Numbers are MIDI pitches; no recordings, samples, or third-party arrangements are used.
+  // MIDI pitches are scheduled on brick hits, so the songs keep the arcade's hit-triggered feel.
   const tunes = [
     {
-      name: "Korobeiniki", wave: "square", step: .075, duration: .12,
-      notes: [76,71,72,74,72,71,69,69,72,76,74,72,71,71,72,74,
-        76,72,69,69,74,77,81,79,77,76,72,76,74,72,71,71]
+      name: "Billie Jean — Michael Jackson", wave: "square", step: .075, duration: .12,
+      notes: [61,61,61,59,57,59,57,61,57,57,59,57,61,61,61,61,61,59,57,59,57,61,59,57,56,54,54,56,54,54,56,54]
     },
     {
-      name: "Für Elise", wave: "triangle", step: .085, duration: .16,
-      notes: [76,75,76,75,76,71,74,72,69,60,64,69,71,64,68,71,
-        72,64,76,75,76,75,76,71,74,72,69,60,64,69,71,64,72,71,69]
+      name: "Beat It — Michael Jackson", wave: "square", step: .075, duration: .12,
+      notes: [70,68,70,70,70,68,70,71,70,68,68,70,68,70,70,70,68,70,68,66,68,66,68,70,68,66,63,61,63,61,63,65]
     },
     {
-      name: "Ode to Joy", wave: "triangle", step: .11, duration: .19,
-      notes: [64,64,65,67,67,65,64,62,60,60,62,64,64,62,62,
-        64,64,65,67,67,65,64,62,60,60,62,64,62,60,60]
+      name: "Thriller — Michael Jackson", wave: "triangle", step: .085, duration: .15,
+      notes: [58,60,62,63,60,58,55,55,58,60,60,58,60,58,60,63,60,58,55,58,60,62,63,60,58,55,55,58,60,60,58,60]
     },
     {
-      name: "In the Hall of the Mountain King", wave: "square", step: .072, duration: .13,
-      notes: [59,61,62,64,66,62,66,64,61,64,59,61,62,61,59,61,
-        62,64,66,62,66,71,69,66,62,66,69,71,74,71,69,66]
+      name: "Like a Prayer — Madonna", wave: "triangle", step: .09, duration: .16,
+      notes: [62,65,64,67,62,65,60,64,64,67,62,65,64,60,64,67,65,69,70,67,72,69,67,72,70,69,65,72,74,69,72,67]
     },
     {
-      name: "Jingle Bells", wave: "triangle", step: .095, duration: .15,
-      notes: [64,64,64,64,64,64,64,67,60,62,64,65,65,65,65,
-        65,64,64,64,64,62,62,64,62,67,64,64,64,64,64,64]
+      name: "Like a Virgin — Madonna", wave: "triangle", step: .09, duration: .16,
+      notes: [61,61,61,68,68,68,66,66,61,61,61,68,68,68,70,66,68,68,68,68,68,66,66,61,63,66,61,61,56,61,63,68]
     },
     {
-      name: "Rondo alla Turca", wave: "square", step: .075, duration: .13,
-      notes: [71,69,68,69,72,74,76,74,72,71,72,74,76,
-        74,72,71,69,68,69,71,72,74,76,77,76,74,72,71,69]
+      name: "Numb — Linkin Park", wave: "square", step: .075, duration: .13,
+      notes: [61,61,61,61,62,61,61,59,57,61,61,59,57,59,54,61,61,59,57,59,54,61,61,61,61,62,61,61,59,57,54,61]
     },
     {
-      name: "When the Saints Go Marching In", wave: "triangle", step: .09, duration: .16,
-      notes: [60,64,65,67,60,64,65,67,60,64,65,67,64,60,64,62,
-        60,64,65,67,67,67,65,64,64,64,60,62,60]
+      name: "Toxic — Britney Spears", wave: "square", step: .075, duration: .12,
+      notes: [60,63,62,63,60,60,63,63,60,63,62,60,60,60,63,60,63,63,60,55,55,59,59,63,63,62,60,60,63,63,60,63]
     },
     {
-      name: "Bach Prelude in C", wave: "sine", step: .065, duration: .17,
-      notes: [60,64,67,72,76,67,72,76,60,64,67,72,76,67,72,76,
-        60,62,69,74,77,69,74,77,59,62,67,74,77,67,74,77]
+      name: "Blinding Lights — The Weeknd", wave: "triangle", step: .085, duration: .15,
+      notes: [65,65,67,65,63,63,60,63,60,63,70,67,65,63,70,67,65,63,65,65,67,63,65,65,67,65,63,63,60,63,60,63]
     },
     {
-      name: "Twinkle Twinkle Little Star", wave: "sine", step: .11, duration: .19,
-      notes: [60,60,67,67,69,69,67,65,65,64,64,62,62,60,
-        67,67,65,65,64,64,62,67,67,65,65,64,64,62]
+      name: "Dancing Queen — ABBA", wave: "triangle", step: .09, duration: .16,
+      notes: [86,84,83,81,79,77,76,74,72,71,69,67,65,64,62,60,59,57,55,53,52,50,48,45,69,85,88,93,93,85,88,69]
     },
     {
-      name: "Minuet in G", wave: "triangle", step: .083, duration: .15,
-      notes: [67,72,74,67,72,74,76,74,72,71,69,71,72,74,
-        67,72,74,67,72,74,76,74,72,71,69,71,72]
+      name: "I Want It That Way — Backstreet Boys", wave: "triangle", step: .09, duration: .16,
+      notes: [77,75,74,72,70,69,70,77,75,74,72,70,69,70,70,69,67,67,77,75,74,72,70,72,74,67,70,74,72,70,70,67]
+    },
+    {
+      name: "We Are the Champions — Queen", wave: "triangle", step: .095, duration: .17,
+      notes: [41,46,53,58,62,72,70,72,70,72,70,65,72,62,60,62,52,60,70,65,69,70,69,67,69,63,68,65,46,53,58,62]
+    },
+    {
+      name: "In the End — Linkin Park", wave: "square", step: .075, duration: .13,
+      notes: [58,58,59,58,58,59,58,58,58,59,58,66,68,70,61,61,63,65,65,65,61,61,61,61,63,65,63,65,63,65,66,65]
     }
   ];
 

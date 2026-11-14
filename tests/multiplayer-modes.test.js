@@ -94,6 +94,7 @@ test("all players use the same CRT power-up set", async () => {
 
 test("paddle-input, aim and launch reach the engine, validated and sequenced", async () => {
   const room = makeRoom(server, "versus", 2), S = room.sim, inst = roomInstance(server, room);
+  inst.ensureLoop = () => {};
   room.startedAt = Date.now() - 1;
   await message(inst, "p0", { type: "paddle-input", seq: 1, pos: 0, aim: 9 });
   assert.equal(room.players[0].pos, 0);
@@ -129,6 +130,7 @@ test("paddle-input, aim and launch reach the engine, validated and sequenced", a
 test("accepted paddle positions catch balls on every edge across multiplayer modes", async () => {
   for (const [mode, count] of [["versus", 4], ["coop", 4], ["infinite", 2]]) {
     const room = makeRoom(server, mode, count), S = room.sim, inst = roomInstance(server, room);
+    inst.ensureLoop = () => {};
     for (const member of room.players) {
       const p = player(room, member.id);
       await message(inst, member.id, { type: "paddle-input", seq: 1, pos: .78 });
@@ -436,6 +438,7 @@ test("all four authenticated players receive the same authoritative world", asyn
   const room = makeRoom(server, "versus", 4), packets = new Map();
   const sockets = room.players.map(p => ({ readyState: 1, deserializeAttachment: () => ({ id: p.id }), send: d => packets.set(p.id, JSON.parse(d)) }));
   const inst = roomInstance(server, room, { sockets });
+  inst.ensureLoop = () => {};
   for (const [i, ws] of sockets.entries()) {
     await BrickRoom.prototype.webSocketMessage.call(inst, ws, JSON.stringify({ type: "paddle-input", version: 1, seq: 1, pos: .15 + i * .2 }));
   }

@@ -21,7 +21,7 @@ test("solo touch surface moves the paddle by finger delta without jumping", () =
   };
   new Function("wrap", "audioInit", "toLogical", "paused", "aimAng", "E", "S", "me", "px", "pw",
     "W", "SZONE", "fx", "sensitivity", "state", "launch", "newBoard", "aimDragAngle",
-    soloHtml.slice(start, end)
+    "let introT=0;"+soloHtml.slice(start, end)
   )(wrap, () => {}, e => [e.clientX, e.clientY], false, 0, engine, {}, me, 180, 64, 360, 550,
     { invert: 0 }, () => .65, "aim", () => launched++, () => {}, () => 0);
   const event = (x, y = 580) => ({ pointerId: 1, target: { tagName: "CANVAS" }, clientX: x, clientY: y });

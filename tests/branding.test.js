@@ -24,10 +24,13 @@ test("solo, leaderboard, share text, and install metadata use BRICKS", () => {
   for (const text of [soloHtml, board, read("pwa.js")]) assert.doesNotMatch(text, /Bricks ASMR|BRICKS ASMR|by Shafiq/i);
 });
 
-test("the Solo menu and both multiplayer lobby states expose the same horror warning", () => {
-  const warning="Brick Rooms Induce Claustrophobia. Keep Smiling.";
+test("the Solo startup and leaderboard carry the horror warning while the menu stays compact", () => {
+  const warning="BRICK ROOMS INDUCE";
   assert.match(soloHtml, /class="menuIdentity"/);
   assert.ok(soloHtml.includes(warning));
-  assert.equal(multiHtml.split(warning).length - 1, 2);
+  assert.doesNotMatch(soloHtml.slice(soloHtml.indexOf('<div class="menuIdentity">'),soloHtml.indexOf('</div>',soloHtml.indexOf('<div class="menuIdentity">'))),/BRICK ROOMS INDUCE/);
+  const board=read("leaderboard.html");
+  assert.ok(board.includes("BRICKS — BRICK ROOMS INDUCE CLAUSTROPHOBIA. KEEP SMILING."));
+  assert.equal(multiHtml.split("Brick Rooms Induce Claustrophobia. Keep Smiling.").length - 1, 2);
 });
 
