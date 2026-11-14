@@ -11,6 +11,8 @@ Agent notes for BRICKS (a a brick-breaker game served from Cloudflare Workers).
 
 Updated automatically on every push to main by `.github/workflows/changelog.yml`. Newest first. Full history: `git log`.
 
+- 2026-11-14 `b8e4838` Rebrand game as BRICKS and add liminal tagline (#49)
+- 2026-11-14 `2c61860` [changelog] auto-update recent changes
 - 2026-11-14 `99976b6` Fix multiplayer lobby and Solo court parity; gate releases with QA
 - 2026-11-14 `5eaf100` [changelog] auto-update recent changes
 - 2026-11-14 `4ad13df` Allow simultaneous touch aiming and paddle glide (#47)
@@ -39,6 +41,4 @@ Updated automatically on every push to main by `.github/workflows/changelog.yml`
 - 2026-11-14 `3d00abf` Blur the name field on entering a room so Space can launch
 - 2026-11-14 `5b4a830` Combine mirrored geometric levels with procedural ricochet and chain mechanics
 - 2026-11-14 `5462a85` Refill Infinite bricks beside the formation, not grid row 0
-- 2026-11-14 `974f7b8` Infinite descent keeps ticking while the ball is held; fix trait line in Infinite Solo
-- 2026-11-14 `361dce0` Fix intermittent multiplayer paddle returns
 <!-- changelog:end -->
