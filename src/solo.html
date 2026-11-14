@@ -252,6 +252,7 @@ html,body,body *{font-family:'Press Start 2P',ui-monospace,monospace!important}
 #nameError{font-size:8px;line-height:1.8}
 #nameModal,#nameForm{border-radius:2px}
 #panel button,#nameForm button,#hudMenu button{text-shadow:0 0 5px #b8eadb1a}
+#hud #songStatus{grid-column:1/-1;white-space:normal;overflow-wrap:anywhere;font-size:.7em;line-height:1.8;color:#a5b7ad;padding:calc(var(--u)*1.5)}
 </style>
 </head>
 <body class="vintage">
@@ -265,6 +266,7 @@ html,body,body *{font-family:'Press Start 2P',ui-monospace,monospace!important}
    <div id="hudMenu" hidden>
     <div class="menuIdentity"><strong>BRICKS</strong></div>
     <div id="hudStatus" role="status"></div>
+    <div id="songStatus" aria-label="Board melody"></div>
     <button id="top" type="button">SCORES</button><a id="multi" href="/multiplayer" title="Multiplayer (2–4 players)" aria-label="Play multiplayer">MULTIPLAYER</a>
     <button id="daily" type="button">DAILY</button><button id="newb" type="button">NEW RUN</button>
     <button id="soundToggle" type="button" aria-pressed="true">SOUND ON</button>
@@ -501,6 +503,7 @@ function sync(){
 const newBoard = () => { seed = randomSeed(); startBoard(); };
 function startBoard(){
   brickMusic.reset(seed);
+  document.getElementById('songStatus').textContent='MELODY · '+brickMusic.name;
   syncArena();
   genBoard();
   S = E.create({arena, board, players: [{id: 'me', seat: 0}], mode: 'solo', set: style, lives: MAX_LIVES, daily: isDaily(), maxBalls: MAX_BALLS, infinite: soloMode === 'infinite'});

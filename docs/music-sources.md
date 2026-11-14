@@ -1,6 +1,6 @@
 # BRICKS music source notes
 
-The game schedules short MIDI-note sequences on brick hits. It does not include audio recordings. These sequences were transcribed from the listed downloadable MIDI arrangements and simplified for the game's hit-triggered playback.
+The game schedules short MIDI-note sequences on brick hits. It does not include audio recordings. The source links below were recorded during implementation, but no original MIDI files or reproducible extraction metadata are stored in this repository. The current 32-note arrays are unverified excerpts, not faithful MIDI playback. All tracks omit MIDI timing, rests, tempo maps, harmony, and instrumentation. Playback advances on brick hits, folds individual pitches into MIDI range 55–88, and transposes down with lost lives and Infinite descent. Listing a song title does not establish transcription accuracy.
 
 | In-game track | MIDI source |
 | --- | --- |
