@@ -13,6 +13,12 @@ The BRICKS home screen opens a unified **Lobby** with **Single Player** and **Mu
 
 **Classic** advances its board only after a lost life and ranks completed runs by **Best Time**. **Infinite** automatically descends every 8 seconds initially and accelerates to a 2.5-second interval; its opening formation uses the same complete V4 pattern and original brick size as Classic, without cropping rows or shrinking the level. The timed crash still creates the increasing pressure. Infinite ranks **Best Score**, calculated by actual break/hit/return points with combo multipliers, and displays bricks broken and maximum combo. The worldwide leaderboard has two tabs; swipe horizontally on touch screens to switch between them. Best Time records remain in `leaderboard_times`, while Best Score records use `leaderboard_scores`. Scores are community-submitted. Player renaming uses an in-game dialog.
 
+## Pop-song MIDI playback
+
+BRICKS can play MIDI files that you supply yourself. Download a `.mid` or `.midi` file (for example, from [BitMidi](https://bitmidi.com/)), open the in-game menu, choose **IMPORT MIDI**, and select one or more files. The **Music library** selector switches among your imported tracks and the built-in board melodies. Up to 12 extracted melody tracks are stored in your browser for use in Solo or Multiplayer; no file is uploaded to the game server.
+
+Each brick hit plays **one MIDI note immediately**, with no automatic backing track or scheduled phrase. The game guesses the lead melody track; for complex multi-instrument MIDIs, this may not be the recognizable vocal line. Importing a MIDI does not authorize redistribution of its underlying song or arrangement. Commercial pop-song MIDI files are **not bundled with the public game**.
+
 ## Install as an app
 
 Open BRICKS in a browser over HTTPS. On Chrome or Edge, use **Install app** from the address bar or browser menu; on Android Chrome use **Install app** or **Add to Home screen**. On iPhone or iPad, use Safari's Share menu and **Add to Home Screen**.

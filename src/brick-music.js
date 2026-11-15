@@ -2,7 +2,7 @@ import { melodyTracks } from "./music-tracks.js";
 
 export function createBrickMusic() {
   const tunes = melodyTracks;
-  let tune = tunes[0], position = 0;
+  let tune = tunes[0], position = 0, customTrack = null, lastSeed = "";
   let voices = [];
 
   function clearQueue() {
@@ -12,12 +12,24 @@ export function createBrickMusic() {
   }
 
   function reset(seed = "") {
+    lastSeed = String(seed);
     clearQueue();
     let hash = 2166136261;
     const key = String(seed);
     for (let i = 0; i < key.length; i++) hash = Math.imul(hash ^ key.charCodeAt(i), 16777619);
-    tune = tunes[(hash >>> 0) % tunes.length];
+    tune = customTrack || tunes[(hash >>> 0) % tunes.length];
     return tune.name;
+  }
+
+  function setCustomTrack(track) {
+    if (!track?.name || !Array.isArray(track.notes) || !track.notes.length) throw new Error("Invalid MIDI melody");
+    customTrack = track;
+    return reset(lastSeed);
+  }
+
+  function useBoardTrack() {
+    customTrack = null;
+    return reset(lastSeed);
   }
 
   function currentEvent() {
@@ -56,7 +68,7 @@ export function createBrickMusic() {
   }
 
   return {
-    reset, clearQueue, next, hit,
+    reset, clearQueue, next, hit, setCustomTrack, useBoardTrack,
     setLives() {}, setDepth() {},
     get name() { return tune.name; },
     get length() { return tune.notes.length; },
