@@ -43,6 +43,50 @@ html,body,body *{font-family:var(--bricks-font)!important}
 @keyframes crtGlassFlicker{0%,19%,22%,100%{opacity:1}20%{opacity:.94}21%{opacity:.98}}
 @keyframes crtGlassRoll{from{background-position:0 -25%}to{background-position:0 125%}}
 @media(prefers-reduced-motion:reduce){#crt{display:block!important;animation:none!important}#crt::after{animation:none!important}}
+
+/* Shared compact music selector for Solo and Multiplayer. */
+#hud #hudMenu .musicControl{
+ grid-column:1/-1;min-width:0;display:grid;gap:8px;
+ padding:11px 2px 13px;border-bottom:1px solid var(--bricks-line);border-right:0!important
+}
+#hud #hudMenu .musicLabel{
+ font-size:8px;line-height:1.5;letter-spacing:.12em;color:var(--bricks-quiet)
+}
+#hud #hudMenu .musicRow{
+ display:grid;grid-template-columns:minmax(0,1fr) 76px;align-items:stretch;gap:7px;min-width:0
+}
+#hud #hudMenu .musicRow #midiSelect{
+ appearance:none;box-sizing:border-box;width:100%;min-width:0;height:42px;
+ padding:0 26px 0 10px;border:1px solid var(--bricks-line);border-radius:2px;
+ background-color:#0c1410;background-image:linear-gradient(45deg,transparent 50%,#91a899 50%),linear-gradient(135deg,#91a899 50%,transparent 50%);
+ background-position:calc(100% - 17px) 18px,calc(100% - 12px) 18px;
+ background-size:5px 5px;background-repeat:no-repeat;
+ color:var(--bricks-menu-ink);font-size:clamp(8px,2.2vw,10px)!important;
+ line-height:1.5;text-overflow:ellipsis;white-space:nowrap
+}
+#hud #hudMenu .musicRow #midiImport{
+ display:flex!important;align-items:center;justify-content:center;box-sizing:border-box;
+ width:76px;min-width:76px;min-height:42px;padding:0 5px!important;
+ border:1px solid #65816d85!important;border-radius:2px!important;
+ background:#142019!important;color:#c5dfcd!important;
+ font-size:8px!important;letter-spacing:0;white-space:nowrap
+}
+#hud #hudMenu .musicRow #midiImport:hover{
+ background:#1c2c22!important;border-color:#8cae95!important
+}
+#hud #hudMenu .musicRow #midiSelect:focus-visible,
+#hud #hudMenu .musicRow #midiImport:focus-visible{
+ outline:2px solid var(--bricks-accent);outline-offset:2px
+}
+#hud #hudMenu #songStatus{
+ position:absolute;width:1px;height:1px;overflow:hidden;padding:0!important;
+ clip-path:inset(50%);white-space:nowrap
+}
+#hud #hudMenu #songStatus[data-notice]{
+ position:static;width:auto;height:auto;overflow:visible;
+ clip-path:none;white-space:normal;overflow-wrap:anywhere;
+ color:#cca89a;font-size:8px;line-height:1.7;padding:0!important
+}
 `;
 
 export function withDesign(html){

@@ -12,6 +12,12 @@ export function setupMidiLibrary(music) {
     if (typeof saved.selected === "string") selected = saved.selected;
   } catch {}
 
+  function refreshLabel() {
+    const option = select.options[0];
+    if (option) option.textContent = selected ? "BOARD MELODY" : "BOARD · " + music.name;
+    select.title = selected ? music.name : "Board melody: " + music.name;
+  }
+
   function render() {
     select.replaceChildren(new Option("BOARD MELODY", ""));
     for (const track of tracks) select.add(new Option(track.name, track.name));
@@ -28,6 +34,8 @@ export function setupMidiLibrary(music) {
       music.useBoardTrack();
     }
     status.textContent = "MELODY · " + music.name;
+    status.removeAttribute?.("data-notice");
+    refreshLabel();
   }
 
   function save() {
@@ -42,6 +50,7 @@ export function setupMidiLibrary(music) {
   render();
   apply();
   button.addEventListener("click", () => input.click());
+  document.getElementById("hudMenuToggle")?.addEventListener("click", refreshLabel);
   select.addEventListener("change", () => { apply(); save(); });
   input.addEventListener("change", async () => {
     const files = Array.from(input.files || []).slice(0, 12);
@@ -64,7 +73,12 @@ export function setupMidiLibrary(music) {
     render();
     apply();
     const saved = save();
-    if (error) status.textContent = "MIDI ERROR · " + error;
-    else if (loaded && !saved) status.textContent = "MIDI LOADED · SESSION ONLY";
+    if (error) {
+      status.textContent = "MIDI ERROR · " + error;
+      status.setAttribute?.("data-notice", "");
+    } else if (loaded && !saved) {
+      status.textContent = "MIDI LOADED · SESSION ONLY";
+      status.setAttribute?.("data-notice", "");
+    }
   });
 }

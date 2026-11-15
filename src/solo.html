@@ -239,9 +239,14 @@ body{--hud-life:#ff7a6b}
    <div id="hudMenu" hidden>
     <div class="menuIdentity"><strong>BRICKS</strong></div>
     <div id="hudStatus" role="status"></div>
-    <div id="songStatus" aria-label="Board melody"></div>
-    <button id="midiImport" type="button">IMPORT MIDI</button>
-    <select id="midiSelect" aria-label="Music library"></select>
+    <div class="musicControl" aria-label="Music settings">
+     <span class="musicLabel">MUSIC</span>
+     <div class="musicRow">
+      <select id="midiSelect" aria-label="Music library"></select>
+      <button id="midiImport" type="button" aria-label="Import MIDI files">+ MIDI</button>
+     </div>
+     <div id="songStatus" role="status" aria-live="polite" aria-label="Board melody"></div>
+    </div>
     <button id="top" type="button">SCORES</button><a id="multi" href="/multiplayer" title="Multiplayer (2–4 players)" aria-label="Play multiplayer">MULTIPLAYER</a>
     <button id="daily" type="button">DAILY</button><button id="newb" type="button">NEW RUN</button>
     <button id="soundToggle" type="button" aria-pressed="true">SOUND ON</button>

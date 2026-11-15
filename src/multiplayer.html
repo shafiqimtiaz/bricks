@@ -316,7 +316,7 @@ body{--hud-life:#ff7a6b}
   <span id="netStatus" role="status" aria-live="polite" hidden></span>
   <button id="hudMenuToggle" type="button" aria-label="Open menu" aria-expanded="false">☰</button>
   <div id="hudBar" aria-hidden="true"><i id="hudFill"></i></div>
-  <div id="hudMenu" hidden><div id="menuStatus" role="status"></div><div id="songStatus" aria-label="Round melody" hidden></div><button id="midiImport" type="button">IMPORT MIDI</button><select id="midiSelect" aria-label="Music library"></select><button id="sound" type="button" aria-pressed="true">SOUND ON</button><button id="sensitivityToggle" type="button">SENS LOW</button><a href="/">SOLO</a><a href="/multiplayer" aria-current="page">LOBBY</a><a href="/leaderboard">SCORES</a>
+  <div id="hudMenu" hidden><div id="menuStatus" role="status"></div><div class="musicControl" aria-label="Music settings"><span class="musicLabel">MUSIC</span><div class="musicRow"><select id="midiSelect" aria-label="Music library"></select><button id="midiImport" type="button" aria-label="Import MIDI files">+ MIDI</button></div><div id="songStatus" role="status" aria-live="polite" aria-label="Round melody"></div></div><button id="sound" type="button" aria-pressed="true">SOUND ON</button><button id="sensitivityToggle" type="button">SENS LOW</button><a href="/">SOLO</a><a href="/multiplayer" aria-current="page">LOBBY</a><a href="/leaderboard">SCORES</a>
   </div>
  </div>
  <div id="panel">
@@ -680,8 +680,7 @@ function accept(s){
  if(s.board?.hp){board=s.board;hpArr=Uint8Array.from(s.board.hp,c=>c.charCodeAt(0)-48);colArr=Uint8Array.from(s.board.colors,c=>parseInt(c,16));tilesFull=true;}
  else if(s.board?.cells&&hpArr)for(let k=0;k<s.board.cells.length;k+=2){hpArr[s.board.cells[k]]=s.board.cells[k+1];dirty.push(s.board.cells[k]);}
  s.board=board;
- $("songStatus").hidden=s.status!=="playing";
- state=s;lastStateAt=performance.now();if(s.status==="finished")brickMusic.clearQueue();
+  state=s;lastStateAt=performance.now();if(s.status==="finished")brickMusic.clearQueue();
  sim=hpArr?buildSim(s):null;
  if(previous?.players.find(p=>p.id===you)?.seat!==s.players.find(p=>p.id===you)?.seat)resize();
  for(const e of s.events||[])react(s,e);
@@ -1133,7 +1132,7 @@ $("sensitivityToggle").textContent="SENS "+SENS_NAMES[sensitivityLevel];
 $("sensitivityToggle").addEventListener("click",()=>{sensitivityLevel=(sensitivityLevel+1)%SENS_VALUES.length;try{localStorage.setItem(SENS_KEY,String(sensitivityLevel));}catch(e){}$("sensitivityToggle").textContent="SENS "+SENS_NAMES[sensitivityLevel];});
 $("leave").addEventListener("click",async()=>{
  closed=true;clearTimeout(retry);clearTimeout(pendingInput);pendingInput=null;$("panel").hidden=false;try{await request("/"+roomCode+"/leave",{});}catch{}
- socket?.close();socket=null;roomCode="";you="";state=null;hpArr=null;tilesFull=true;clearFx();setConnection("Offline");$("menuStatus").textContent="";$("songStatus").hidden=true;$("nicknameForm").hidden=true;$("room").hidden=true;$("intro").hidden=false;history.replaceState(null,"","/multiplayer");
+ socket?.close();socket=null;roomCode="";you="";state=null;hpArr=null;tilesFull=true;clearFx();setConnection("Offline");$("menuStatus").textContent="";$("songStatus").removeAttribute("data-notice");$("nicknameForm").hidden=true;$("room").hidden=true;$("intro").hidden=false;history.replaceState(null,"","/multiplayer");
 });
 function closeMenu(restoreFocus=false){const open=!$("hudMenu").hidden;$("hudMenu").hidden=true;$("hudMenuToggle").setAttribute("aria-expanded","false");$("hudMenuToggle").textContent="☰";$("hudMenuToggle").setAttribute("aria-label","Open menu");if(open&&restoreFocus===true)$("hudMenuToggle").focus();}
 $("hudMenuToggle").addEventListener("click",()=>{
