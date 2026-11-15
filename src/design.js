@@ -47,5 +47,5 @@ html,body,body *{font-family:var(--bricks-font)!important}
 
 export function withDesign(html){
  if(html.includes('id="bricks-design"'))return html;
- return html.replace('</head>','<style id="bricks-design">\\n'+designCss+'\\n</style>\\n</head>');
+ return html.replace('</head>', '<style id="bricks-design">'+designCss+'</style></head>');
 }
