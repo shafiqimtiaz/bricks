@@ -39,7 +39,8 @@ export function extractMidi(bytes, trackIndex, topVoice = false) {
   const tracks = [];
   for (let track = 0; track < trackCount; track++) {
     if (label() !== "MTrk") throw new Error("Missing MIDI track");
-    const end = cursor + number(4);
+    const length = number(4);
+    const end = cursor + length;
     let tick = 0, runningStatus = 0;
     const active = new Map(), notes = [];
     while (cursor < end) {
