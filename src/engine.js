@@ -109,7 +109,7 @@ function brickEngine(rng=Math.random){
  function curSpeed(S){return S.speed*(S.fx.slow>0?.5:1)*(S.fx.hyper>0?2:1);}
  function paddles(S,p){if(!(p.fx.twin>0))return [p.c];const [lo,hi]=edgeSpan(S,p.seat);return [p.c,lo+hi-p.c];}
  function setVel(S,b,ang){const S0=curSpeed(S);b.vx=S0*Math.sin(ang);b.vy=-S0*Math.cos(ang);}
- function fixVel(S,b){normalizeBallVelocity(b,curSpeed(S),'y');}
+ function fixVel(S,b){normalizeBallVelocity(b,curSpeed(S),horizontal(player(S,b.owner)?.seat??0)?'y':'x');}
  function heldSpot(S,p){const o=OUT[p.seat],q=face(S,p.seat)-o*S.BR-o;return horizontal(p.seat)?{x:p.c,y:q}:{x:q,y:p.c};}
  function serve(S,p,ev){
   p.aim=(rng()-.5)*.6;

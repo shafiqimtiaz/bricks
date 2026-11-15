@@ -1,5 +1,17 @@
 import { createBrickMusic } from "./brick-music.js";
 import { buildLevelV4 } from "./level-v4.js";
+function drawPowerStatus(ctx,defs,globalFx,playerFx,width,y){
+ const active=Object.values(defs).filter(d=>d.t&&(d.own?playerFx[d.id]:globalFx[d.id])>0);
+ const count=Math.min(active.length,3),gap=6,slot=Math.min(100,(width-24-gap*2)/3);
+ ctx.save();ctx.textAlign='left';ctx.textBaseline='middle';ctx.font="6px 'Press Start 2P',monospace";
+ for(let i=0;i<count;i++){
+  const d=active[i],left=d.own?playerFx[d.id]:globalFx[d.id],x=(width-count*slot-(count-1)*gap)/2+i*(slot+gap);
+  ctx.fillStyle='#1e2925';ctx.fillRect(x,y+9,slot,2);
+  ctx.fillStyle=d.bad?'#f28c82':d.c;ctx.fillRect(x,y+9,slot*Math.min(1,left/d.t),2);
+  ctx.fillText(d.ic+' '+Math.ceil(left)+'s',x,y);
+ }
+ ctx.restore();
+}
 function randomPlayerName(){
  const adjectives=["Hollow","Silent","Pale","Faded","Hidden","Distant","Crooked","Waning","Restless","Velvet","Obscure","Lonely","Forgotten","Quiet","Vacant","Dusty","Ghostly","Strange","Shifting","Nameless"];
  const nouns=["Lantern","Specter","Shadow","Echo","Hallway","Signal","Watcher","Visitor","Mirror","Static","Drifter","Window","Whisper","Phantom","Wanderer","Moth","Doorway","Nocturne","Reverie","Glitch"];
@@ -357,6 +369,7 @@ function createASMR(host){
     g.connect(stereo);stereo.connect(master);
    }else g.connect(master);
    o.start(t);o.stop(t+dur+.02);
+   return ()=>{g.gain.cancelScheduledValues(audio.currentTime);g.gain.setValueAtTime(.0001,audio.currentTime);o.stop(audio.currentTime);};
   }
  };
 }
@@ -410,7 +423,7 @@ function stageFit(vw,vh,stageW,stageH,panelOpen,hudHeight=0){
  return {dock,edge,gap,sidebar,width,height,hudOver:Math.max(0,hudHeight-36*height/stageH),
   stageLeft:(vw-width-(dock?sidebar+gap:0))/2,unit:Math.min(14,Math.max(3,Math.min(width/100,height/150)))};
 }
-export {randomPlayerName,arenaLayout,squareArena,hash,random,bricks,infiniteOpeningBoard,normalizeBallVelocity,drawBrickTile,aimDragAngle,drawAimGuide,soloBrickNote,createASMR,boardView,viewMatrix,viewPoint,stageFit,ballSpeed,aimVelocity};
+export {drawPowerStatus,randomPlayerName,arenaLayout,squareArena,hash,random,bricks,infiniteOpeningBoard,normalizeBallVelocity,drawBrickTile,aimDragAngle,drawAimGuide,soloBrickNote,createASMR,boardView,viewMatrix,viewPoint,stageFit,ballSpeed,aimVelocity};
 const browserCorePrelude="const __name=(target)=>target;\n";
-export const browserCoreSource=browserCorePrelude+[randomPlayerName,arenaLayout,normalizeBallVelocity,drawBrickTile,aimDragAngle,drawAimGuide,soloBrickNote,createASMR,createBrickMusic,boardView,viewMatrix,viewPoint,stageFit,ballSpeed,aimVelocity].map(fn=>fn.toString()).join("\n");
-export const soloCoreSource=browserCorePrelude+[randomPlayerName,arenaLayout,hash,random,bricks,infiniteOpeningBoard,buildLevelV4,normalizeBallVelocity,drawBrickTile,aimDragAngle,drawAimGuide,soloBrickNote,createASMR,createBrickMusic,stageFit,ballSpeed,aimVelocity].map(fn=>fn.toString()).join("\n");
+export const browserCoreSource=browserCorePrelude+[drawPowerStatus,randomPlayerName,arenaLayout,normalizeBallVelocity,drawBrickTile,aimDragAngle,drawAimGuide,soloBrickNote,createASMR,createBrickMusic,boardView,viewMatrix,viewPoint,stageFit,ballSpeed,aimVelocity].map(fn=>fn.toString()).join("\n");
+export const soloCoreSource=browserCorePrelude+[drawPowerStatus,randomPlayerName,arenaLayout,hash,random,bricks,infiniteOpeningBoard,buildLevelV4,normalizeBallVelocity,drawBrickTile,aimDragAngle,drawAimGuide,soloBrickNote,createASMR,createBrickMusic,stageFit,ballSpeed,aimVelocity].map(fn=>fn.toString()).join("\n");

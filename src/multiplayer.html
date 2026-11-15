@@ -328,6 +328,8 @@ html,body,body *{font-family:'Press Start 2P',ui-monospace,monospace!important}
 #panel .modePick button,#panel .roomOption button{border-radius:2px}
 #hudMenu button,#hudMenu a,#panel button{text-shadow:0 0 5px #b8eadb1a}
 #panel .lobbyHero .byline{font-style:normal;font-size:clamp(6px,calc(var(--u)*1.5),9px);line-height:1.9;letter-spacing:.02em;text-transform:uppercase;text-wrap:balance;max-width:100%;margin-inline:auto}
+#hud #songStatus{grid-column:1/-1;white-space:normal;overflow-wrap:anywhere;font-size:.7em;line-height:1.8;color:#a5b7ad;padding:calc(var(--u)*1.5)}
+#hud #songStatus[hidden]{display:none}
 </style>
 </head>
 <body class="vintage">
@@ -341,7 +343,7 @@ html,body,body *{font-family:'Press Start 2P',ui-monospace,monospace!important}
   <span id="netStatus" role="status" aria-live="polite" hidden></span>
   <button id="hudMenuToggle" type="button" aria-label="Open menu" aria-expanded="false">☰</button>
   <div id="hudBar" aria-hidden="true"><i id="hudFill"></i></div>
-  <div id="hudMenu" hidden><div id="menuStatus" role="status"></div><button id="sound" type="button" aria-pressed="true">SOUND ON</button><button id="sensitivityToggle" type="button">SENS LOW</button><a href="/">SOLO</a><a href="/multiplayer" aria-current="page">LOBBY</a><a href="/leaderboard">SCORES</a>
+  <div id="hudMenu" hidden><div id="menuStatus" role="status"></div><div id="songStatus" aria-label="Round melody" hidden></div><button id="sound" type="button" aria-pressed="true">SOUND ON</button><button id="sensitivityToggle" type="button">SENS LOW</button><a href="/">SOLO</a><a href="/multiplayer" aria-current="page">LOBBY</a><a href="/leaderboard">SCORES</a>
   </div>
  </div>
  <div id="panel">
@@ -690,6 +692,7 @@ function accept(s){
   brickMusic.clearQueue();clearFx();tilesFull=true;localPos=.5;paddlePulse=0;clearTimeout(toastTimeout);$("toast").classList.remove("visible");
   for(const id of Object.keys(shownC))delete shownC[id];
   brickMusic.reset(s.seed+":"+s.round);
+  $("songStatus").textContent="MELODY · "+brickMusic.name;
  }
  const mine = s.players.find(p=>p.id===you);
  if(mine)brickMusic.setLives(mine.lives,s.mode==="versus"?6:3*s.players.length);
@@ -703,6 +706,7 @@ function accept(s){
  if(s.board?.hp){board=s.board;hpArr=Uint8Array.from(s.board.hp,c=>c.charCodeAt(0)-48);colArr=Uint8Array.from(s.board.colors,c=>parseInt(c,16));tilesFull=true;}
  else if(s.board?.cells&&hpArr)for(let k=0;k<s.board.cells.length;k+=2){hpArr[s.board.cells[k]]=s.board.cells[k+1];dirty.push(s.board.cells[k]);}
  s.board=board;
+ $("songStatus").hidden=s.status!=="playing";
  state=s;lastStateAt=performance.now();if(s.status==="finished")brickMusic.clearQueue();
  sim=hpArr?buildSim(s):null;
  if(previous?.players.find(p=>p.id===you)?.seat!==s.players.find(p=>p.id===you)?.seat)resize();
@@ -997,6 +1001,7 @@ function draw(now){
  ctx.font=small;
  if(live&&serve){ctx.fillStyle=V?"#9ff3ff":"#eee";ctx.fillText("DRAG AIM · TAP LAUNCH",viewW/2,viewH-72);}
 
+ if(live&&me&&!serve&&!me.out)drawPowerStatus(ctx,E.PU_BY_ID,s.fx,me.fx,viewW,viewH-42);
  if(live&&me&&me.out){
   const left=s.players.filter(p=>!p.out).length,half=Math.min(150,viewW/2-12);
   ctx.fillStyle=V?"rgba(26,5,51,.82)":"rgba(7,9,12,.8)";ctx.fillRect(view.cx-half,view.cy-34,half*2,68);
@@ -1154,7 +1159,7 @@ $("sensitivityToggle").textContent="SENS "+SENS_NAMES[sensitivityLevel];
 $("sensitivityToggle").addEventListener("click",()=>{sensitivityLevel=(sensitivityLevel+1)%SENS_VALUES.length;try{localStorage.setItem(SENS_KEY,String(sensitivityLevel));}catch(e){}$("sensitivityToggle").textContent="SENS "+SENS_NAMES[sensitivityLevel];});
 $("leave").addEventListener("click",async()=>{
  closed=true;clearTimeout(retry);clearTimeout(pendingInput);pendingInput=null;$("panel").hidden=false;try{await request("/"+roomCode+"/leave",{});}catch{}
- socket?.close();socket=null;roomCode="";you="";state=null;hpArr=null;tilesFull=true;clearFx();setConnection("Offline");$("menuStatus").textContent="";$("nicknameForm").hidden=true;$("room").hidden=true;$("intro").hidden=false;history.replaceState(null,"","/multiplayer");
+ socket?.close();socket=null;roomCode="";you="";state=null;hpArr=null;tilesFull=true;clearFx();setConnection("Offline");$("menuStatus").textContent="";$("songStatus").hidden=true;$("nicknameForm").hidden=true;$("room").hidden=true;$("intro").hidden=false;history.replaceState(null,"","/multiplayer");
 });
 function closeMenu(restoreFocus=false){const open=!$("hudMenu").hidden;$("hudMenu").hidden=true;$("hudMenuToggle").setAttribute("aria-expanded","false");$("hudMenuToggle").textContent="☰";$("hudMenuToggle").setAttribute("aria-label","Open menu");if(open&&restoreFocus===true)$("hudMenuToggle").focus();}
 $("hudMenuToggle").addEventListener("click",()=>{

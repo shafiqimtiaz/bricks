@@ -98,7 +98,12 @@ test("opening the Solo menu or panel pauses the run; closing it resumes", () => 
   // behind it. Any overlay open (menu or panel) must freeze the sim,
   // the timer, and the visuals until it closes.
   assert.match(soloHtml, /let lives = MAX_LIVES, runTime = 0, timerOn = false, paused = false;/);
-  assert.match(soloHtml, /function syncPause\(\)\{ paused = !P\('hudMenu'\)\.hidden \|\| !P\('panel'\)\.hidden; \}/);
+  const pauseBody=soloHtml.match(/function syncPause\(\)\{([^}]+)\}/)[1];
+  for(const menuHidden of [true,false])for(const panelHidden of [true,false]){
+    const paused=new Function('P','brickMusic','let paused=false;'+pauseBody+';return paused;')(
+      id=>({hidden:id==='hudMenu'?menuHidden:panelHidden}),{clearQueue(){}});
+    assert.equal(paused,!menuHidden||!panelHidden);
+  }
   assert.match(soloHtml, /if \(!paused\) \{\s*if \(timerOn && !\(fx\.freeze > 0\) && \(state === 'play' \|\| state === 'aim'\)\) runTime \+= dt \* 1000;/);
   assert.match(soloHtml, /render\(paused \? 0 : dt \* 60\); postFX\(now\);/);
   assert.match(soloHtml, /P\('hudMenuToggle'\)\.onclick=\(\)=>\{const opened=P\('hudMenu'\)\.hidden;[\s\S]*?syncPause\(\);\};/);
@@ -340,7 +345,7 @@ test("connecting players update online counts immediately without waiting for th
   let renders=0;
   const fn=new Function("performance","render","oldState","newState",
     "let state=oldState,you='p0',lastUiRender=100,lastStateAt=0,tilesFull=false,localPos=.5,popAt=null,W=360,clock=0,board=null,hpArr=null,colArr=null,dirty=[],sim=null,floats=[],style='clean',heldBefore=false,shownC={},paddlePulse=0,brickMusic={reset(){},setLives(){},setDepth(){}};"
-    +"function clearFx(){}function react(){}function buildSim(){}function holdingServe(){return false;}function queueInput(){}function adoptArena(){}function resize(){}"
+    +"function $(id){return {hidden:false,textContent:''};}function clearFx(){}function react(){}function buildSim(){}function holdingServe(){return false;}function queueInput(){}function adoptArena(){}function resize(){}"
     +client.slice(from,to)+"accept(newState);");
   fn({now:()=>101},()=>{renders++},initial,incoming);
   assert.equal(renders,1);
