@@ -1,20 +1,33 @@
-# BRICKS music source notes
+# BRICKS music sources
 
-The game schedules short MIDI-note sequences on brick hits. It does not include audio recordings. The source links below were recorded during implementation, but no original MIDI files or reproducible extraction metadata are stored in this repository. The current 32-note arrays are unverified excerpts, not faithful MIDI playback. All tracks omit MIDI timing, rests, tempo maps, harmony, and instrumentation. Playback advances on brick hits, folds individual pitches into MIDI range 55–88, and transposes down with lost lives and Infinite descent. Listing a song title does not establish transcription accuracy.
+The game now plays **timed note events extracted from real MIDI tracks**, not a list of 32 notes advanced by brick hits. Source MIDI note-on times, lengths, tempo changes and rests are converted to seconds. A brick hit starts a short phrase; additional hits extend playback on the same clock. The original note pitches are not octave-folded or transposed by life count or Infinite descent.
 
-| In-game track | MIDI source |
-| --- | --- |
-| Billie Jean — Michael Jackson | [BitMidi](https://bitmidi.com/michael-jackson-billie-jean-mid) |
-| Beat It — Michael Jackson | [BitMidi](https://bitmidi.com/michael-jackson-beat-it-mid) |
-| Thriller — Michael Jackson | [BitMidi](https://bitmidi.com/michael-jackson-thriller-mid) |
-| Like a Prayer — Madonna | [BitMidi](https://bitmidi.com/madonna-like-a-prayer-k-mid) |
-| Like a Virgin — Madonna | [BitMidi](https://bitmidi.com/madonna-like-a-virgin-k-mid) |
-| Numb — Linkin Park | [BitMidi](https://bitmidi.com/linkin_park-numb-mid) |
-| In the End — Linkin Park | [BitMidi](https://bitmidi.com/linkin_park-in-the-end-mid) |
-| Toxic — Britney Spears | [BitMidi](https://bitmidi.com/britney-spears-toxic-mid) |
-| Blinding Lights — The Weeknd | [MIDI DB](https://www.mididb.com/the-weeknd/blinding-lights-midi/) |
-| Dancing Queen — ABBA | [BitMidi](https://bitmidi.com/abba-dancing_queen-mid) |
-| I Want It That Way — Backstreet Boys | [BitMidi](https://bitmidi.com/i-want-it-that-way-mid) |
-| We Are the Champions — Queen | [BitMidi](https://bitmidi.com/queen-we-are-the-champions-mid) |
+## Shipped tracks
 
-These pages provide downloads, but that alone does not establish permission to redistribute the arrangements or use them in a public release. Confirm the applicable rights before distribution. MIDI DB describes its Weeknd download as a demo.
+The current eight tracks come from public-domain **Mutopia Project** editions, copied with their provenance at [wustep/jev-playground reference MIDI](https://github.com/wustep/jev-playground/tree/main/docs/ref-midi/public). Each entry in `src/music-tracks.js` records the **exact Git blob SHA**, chosen MIDI track index, extraction method and source URL. These are actual sequenced editions, but only one voice is rendered, not a full piano performance.
+
+| Game title | MIDI source | Track used |
+| --- | --- | --- |
+| Für Elise — Beethoven | [Mutopia edition](https://github.com/wustep/jev-playground/blob/main/docs/ref-midi/public/beethoven-woo59-fur-elise.mid) | 1 |
+| Moonlight Sonata — Beethoven | [Mutopia edition](https://github.com/wustep/jev-playground/blob/main/docs/ref-midi/public/beethoven-op27-2-moonlight-1.mid) | 1 |
+| Prelude in C — J. S. Bach | [Mutopia edition](https://github.com/wustep/jev-playground/blob/main/docs/ref-midi/public/bach-bwv846-wtk1-prelude1.mid) | 2 |
+| Invention No. 1 — J. S. Bach | [Mutopia edition](https://github.com/wustep/jev-playground/blob/main/docs/ref-midi/public/bach-bwv772-invention-01.mid) | 1 |
+| Nocturne Op. 9 No. 2 — Chopin | [Mutopia edition](https://github.com/wustep/jev-playground/blob/main/docs/ref-midi/public/chopin-op9-2-nocturne.mid) | 1 |
+| Prelude Op. 28 No. 4 — Chopin | [Mutopia edition](https://github.com/wustep/jev-playground/blob/main/docs/ref-midi/public/chopin-op28-4-prelude.mid) | 1 |
+| Clair de lune — Debussy | [Mutopia edition](https://github.com/wustep/jev-playground/blob/main/docs/ref-midi/public/debussy-l75-clair-de-lune.mid) | 1 (highest simultaneous pitch) |
+| Pathétique Adagio — Beethoven | [Mutopia edition](https://github.com/wustep/jev-playground/blob/main/docs/ref-midi/public/beethoven-op13-pathetique-2.mid) | 1 (highest simultaneous pitch) |
+
+Mutopia's source pages document the editions' public-domain status. This repository does not distribute the source MIDI binary; it distributes extracted note events from those editions.
+
+## Pop songs not yet cleared
+
+The former 12 pop-song labels (Michael Jackson, Madonna, Linkin Park, ABBA, and others) were attached to **unverified** 32-note arrays. Those arrays have been removed instead of being advertised as authentic melodies. A free MIDI download from BitMidi or another site does **not** establish permission to include its song, transcription or arrangement in a public game.
+
+To add a song once a suitable MIDI and permissions are available:
+
+1. Identify the correct melody track/channel in the MIDI, and listen to it. Do not guess from the filename.
+2. Run `node scripts/extract-midi.mjs licensed.mid --track 1 --name "Track title" --source "https://..." --license "Documented permission" > track.json`. For chordal piano tracks, `--top` selects the highest pitch at simultaneous onsets; **audition the result**, since highest voice does not automatically equal the melody.
+3. Add the resulting object to `src/music-tracks.js`, recording its checksum/source and reviewing the first phrase against the source.
+4. Run `npm test && npm run build`, and verify the audio on mobile and desktop.
+
+The extracted melody is intentionally not accompanied by the source MIDI's instruments or its other tracks. Some pieces are more recognizable with accompaniment; additional voices would need a separately tested playback design.
