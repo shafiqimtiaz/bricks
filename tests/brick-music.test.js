@@ -91,11 +91,13 @@ test("dense combos stay bounded, pause cancels audio, and replay resets the melo
   for (let i = 1; i < output.length; i++) assert.ok(output[i][4] >= output[i - 1][4]);
   music.clearQueue();
   assert.equal(canceled, output.length);
+  const beforeResume = output.length;
   music.hit(kit);
-  approximate(output.at(-output.length + canceled)[4], 0);
+  approximate(output[beforeResume][4], 0);
   music.reset("retry");
+  const beforeRetry = output.length;
   assert.equal(music.hit(kit), true);
-  approximate(output.at(-7)[4], 0);
+  approximate(output[beforeRetry][4], 0);
   const before = output.length;
   assert.equal(music.hit(null), false);
   assert.equal(output.length, before);
