@@ -39,9 +39,10 @@ test('power strip shows only live owner/global effects with bounded timer bars',
 
 test('clearing music cancels scheduled voices rather than only resetting a counter',async()=>{
  const {createBrickMusic}=await import('../src/brick-music.js');
- const music=createBrickMusic();let stopped=0;
- const kit={context:{currentTime:0},blip(){return ()=>stopped++}};
+ const music=createBrickMusic();let stopped=0,scheduled=0;
+ const kit={context:{currentTime:0},blip(){scheduled++;return ()=>stopped++}};
  music.hit(kit);music.hit(kit);music.clearQueue();
- assert.equal(stopped,2);
- music.clearQueue();assert.equal(stopped,2);
+ assert.ok(scheduled>2);
+ assert.equal(stopped,scheduled);
+ music.clearQueue();assert.equal(stopped,scheduled);
 });
