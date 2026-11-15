@@ -71,8 +71,8 @@ test("MIDI upload survives the browser bundler renaming the selector function", 
   const bytes = fixture();
   for (const source of [soloCoreSource, browserCoreSource]) {
     const renamed = source.replace(
-      /(const selectMidiMelody = function )selectMidiMelody(?=\\()/,
-      "$1selectMidiMelody2"
+      "const selectMidiMelody = function selectMidiMelody(",
+      "const selectMidiMelody = function selectMidiMelody2("
     );
     assert.notEqual(renamed, source, "selector must have a stable browser binding");
     const listeners = {};
@@ -101,7 +101,7 @@ test("MIDI upload survives the browser bundler renaming the selector function", 
       localStorage: { getItem: () => null, setItem() {} },
       music
     };
-    runInNewContext(renamed + "\\nsetupMidiLibrary(music)", context);
+    runInNewContext(renamed + String.fromCharCode(10) + "setupMidiLibrary(music)", context);
     await listeners.change();
     assert.equal(music.name, "Naruto Main Theme");
     assert.equal(music.notes.length, 20);
