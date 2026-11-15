@@ -2,16 +2,13 @@ import { melodyTracks } from "./music-tracks.js";
 
 export function createBrickMusic() {
   const tunes = melodyTracks;
-  let tune = tunes[0], position = 0, cycle = 0, clock = null, queuedUntil = 0;
+  let tune = tunes[0], position = 0;
   let voices = [];
 
   function clearQueue() {
     for (const voice of voices) voice.cancel();
     voices = [];
     position = 0;
-    cycle = 0;
-    clock = null;
-    queuedUntil = 0;
   }
 
   function reset(seed = "") {
@@ -29,10 +26,7 @@ export function createBrickMusic() {
 
   function advance() {
     position++;
-    if (position >= tune.notes.length) {
-      position = 0;
-      cycle++;
-    }
+    if (position >= tune.notes.length) position = 0;
   }
 
   function noteParams(event) {
@@ -54,25 +48,11 @@ export function createBrickMusic() {
   function hit(soundKit, pan = 0) {
     if (!soundKit) return false;
     const now = soundKit.context.currentTime;
-    if (queuedUntil - now > 2.5) return false;
     voices = voices.filter(voice => voice.until > now);
-    const first = cycle * tune.loop + currentEvent()[0];
-    if (clock === null || now > queuedUntil + .6) clock = now - first;
-    const end = first + 1.3;
-    let scheduled = 0;
-    while (scheduled < 16) {
-      const event = currentEvent();
-      const at = cycle * tune.loop + event[0];
-      if (at >= end && scheduled) break;
-      const note = noteParams(event);
-      const delay = Math.max(0, clock + at - now);
-      const cancel = soundKit.blip(note.frequency, note.volume, note.duration, note.wave, delay, pan);
-      if (typeof cancel === "function") voices.push({ cancel, until: now + delay + note.duration + .02 });
-      queuedUntil = Math.max(queuedUntil, now + delay + note.duration);
-      advance();
-      scheduled++;
-    }
-    return scheduled > 0;
+    const note = next();
+    const cancel = soundKit.blip(note.frequency, note.volume, note.duration, note.wave, 0, pan);
+    if (typeof cancel === "function") voices.push({ cancel, until: now + note.duration + .02 });
+    return true;
   }
 
   return {

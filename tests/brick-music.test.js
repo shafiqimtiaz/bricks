@@ -66,41 +66,55 @@ test("seeded board and round selection remains deterministic with variation", ()
   assert.equal(choices.size, melodyTracks.length);
 });
 
-test("a brick hit plays a short phrase on the MIDI clock instead of one hit per note", () => {
+test("each brick hit plays exactly one MIDI note immediately, with no autoplay", () => {
   const music = choose("Für Elise"), output = [];
   const kit = { context: { currentTime: 3 }, blip: (...args) => output.push(args) };
+  const tune = melodyTracks.find(t => t.name.startsWith("Für Elise"));
+  assert.equal(music.hit(null), false, "muted hits must not advance the melody");
+  assert.equal(output.length, 0);
+  for (let i = 0; i < 5; i++) {
+    assert.equal(music.hit(kit), true);
+    assert.equal(output.length, i + 1, "one hit must trigger only one note");
+    const [frequency, , duration, , delay] = output[i];
+    approximate(frequency, 440 * Math.pow(2, (tune.notes[i][1] - 69) / 12));
+    approximate(duration, tune.notes[i][2]);
+    assert.equal(delay, 0, "the note starts on its corresponding brick hit");
+  }
+  kit.context.currentTime += 20;
+  assert.equal(output.length, 5, "no automatic notes after hits stop");
   assert.equal(music.hit(kit), true);
-  assert.ok(output.length >= 5, "first hit must trigger several notes");
-  approximate(output[0][4], 0);
-  approximate(output[1][4], .2083);
-  approximate(output[2][4], .4167);
-  assert.ok(output.every(n => n[2] > 0 && n[4] >= 0));
-  const start = output.length;
-  assert.equal(music.hit(kit), true);
-  assert.ok(output.length > start, "rapid hits extend the existing phrase");
-  assert.ok(output[start][4] >= output.at(start - 1)[4], "phrase continuation retains original timing");
+  assert.equal(output.length, 6, "a later hit still plays exactly one note");
+  assert.equal(output[5][4], 0, "MIDI rests must not delay the player's hit");
 });
 
-test("dense combos stay bounded, pause cancels audio, and replay resets the melody", () => {
+test("rapid hits are not throttled, and clearing music cancels voices and resets playback", () => {
   const music = choose("Für Elise"), output = [];
   let canceled = 0;
   const kit = { context: { currentTime: 7 }, blip: (...args) => { output.push(args); return () => canceled++; } };
-  for (let i = 0; i < 60; i++) music.hit(kit);
-  assert.ok(output.length > 5 && output.length < 40);
-  assert.ok(output.at(-1)[4] < 5);
-  for (let i = 1; i < output.length; i++) assert.ok(output[i][4] >= output[i - 1][4]);
+  for (let i = 0; i < 60; i++) assert.equal(music.hit(kit), true);
+  assert.equal(output.length, 60, "every brick in a combo must sound");
+  assert.ok(output.every(note => note[4] === 0), "no MIDI notes are queued for later");
+  const firstFrequency = output[0][0];
   music.clearQueue();
   assert.equal(canceled, output.length);
-  const beforeResume = output.length;
   music.hit(kit);
-  approximate(output[beforeResume][4], 0);
+  approximate(output.at(-1)[0], firstFrequency);
+  assert.equal(output.at(-1)[4], 0);
   music.reset("retry");
   const beforeRetry = output.length;
   assert.equal(music.hit(kit), true);
-  approximate(output[beforeRetry][4], 0);
-  const before = output.length;
+  assert.equal(output.length, beforeRetry + 1);
+  assert.equal(output.at(-1)[4], 0);
+  const beforeMute = output.length;
   assert.equal(music.hit(null), false);
-  assert.equal(output.length, before);
+  assert.equal(output.length, beforeMute);
+});
+
+test("the melody loops back to its first pitch after the last note", () => {
+  const music = choose("Für Elise");
+  const expected = music.next().frequency;
+  for (let i = 1; i < music.length; i++) music.next();
+  approximate(music.next().frequency, expected);
 });
 
 test("solo and multiplayer display the actual selected tune and bundle the same music engine", () => {

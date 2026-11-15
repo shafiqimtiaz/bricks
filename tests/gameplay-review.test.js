@@ -42,7 +42,7 @@ test('clearing music cancels scheduled voices rather than only resetting a count
  const music=createBrickMusic();let stopped=0,scheduled=0;
  const kit={context:{currentTime:0},blip(){scheduled++;return ()=>stopped++}};
  music.hit(kit);music.hit(kit);music.clearQueue();
- assert.ok(scheduled>2);
+ assert.equal(scheduled,2);
  assert.equal(stopped,scheduled);
  music.clearQueue();assert.equal(stopped,scheduled);
 });
