@@ -1040,7 +1040,7 @@ function closeMenu(restoreFocus=false){const open=!P('hudMenu').hidden;P('hudMen
 P('soundToggle').onclick=()=>{soundOn=!soundOn;if(!soundOn)brickMusic.clearQueue();P('soundToggle').textContent='SOUND '+(soundOn?'ON':'OFF');P('soundToggle').setAttribute('aria-pressed',String(soundOn));if(soundOn)audioInit();};
 P('sensitivityToggle').textContent='SENSITIVITY '+SENS_NAMES[sensitivityLevel];
 P('sensitivityToggle').onclick=()=>{sensitivityLevel=(sensitivityLevel+1)%SENS_VALUES.length;try{localStorage.setItem(SENS_KEY,String(sensitivityLevel));}catch(e){}P('sensitivityToggle').textContent='SENSITIVITY '+SENS_NAMES[sensitivityLevel];};
-P('hudMenu').addEventListener('click',e=>{if(!['soundToggle','sensitivityToggle','soloMode','midiImport','midiSelect'].includes(e.target.id))closeMenu();});
+P('hudMenu').addEventListener('click',e=>{if(e.target.id!=='soundToggle'&&e.target.id!=='sensitivityToggle'&&e.target.id!=='soloMode'&&e.target.id!=='midiImport'&&e.target.id!=='midiSelect')closeMenu();});
 document.addEventListener('pointerdown',e=>{if(!e.target.closest('#hudMenu,#hudMenuToggle'))closeMenu();});
 window.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!P('nameModal').hidden)closeNameModal();else closeMenu(true);}});
 // A mouse click should not leave focus on a HUD button, or Space would trigger it again instead of launching.
