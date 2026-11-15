@@ -130,7 +130,7 @@ export function selectMidiMelody(bytes, filename) {
   }
   if (!best) throw new Error("No melody track found");
   return {
-    name: String(filename).replace(/\\.(mid|midi)$/i, "").slice(0, 100),
+    name: String(filename).replace(/\.(mid|midi)$/i, "").slice(0, 100),
     wave: "triangle", ...best.melody,
     source: { track: best.track, license: "User-provided MIDI (local browser only)" }
   };
