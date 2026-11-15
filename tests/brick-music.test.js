@@ -2,155 +2,129 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { runInNewContext } from "node:vm";
 import { createBrickMusic } from "../src/brick-music.js";
+import { melodyTracks } from "../src/music-tracks.js";
 import { browserCoreSource, soloCoreSource } from "../src/game-core.js";
 import { soloHtml, multiHtml, serverSource, loadServer, makeRoom, roomInstance } from "./helpers.js";
 
-test("twelve recognizable pop tunes play without a file picker", () => {
+const approximate = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-4, actual + " !== " + expected);
+
+function choose(name) {
   const music = createBrickMusic();
-  assert.equal(music.count, 12);
   for (let i = 0; i < 100; i++) {
-    const title = music.reset("seed-" + i);
-    assert.equal(typeof title, "string");
-    assert.ok(title.length);
-    const note = music.next();
-    assert.ok(note.frequency >= 220 && note.frequency <= 2000);
-    assert.ok(note.duration > 0 && note.duration < .5);
-    assert.ok(["triangle", "sine", "square"].includes(note.wave));
+    if (music.reset("seed-" + i).startsWith(name)) return music;
   }
-  for (const title of ["Billie Jean", "Numb", "Toxic", "Blinding Lights", "Dancing Queen"]) {
-    assert.ok(Array.from({ length: 100 }, (_, i) => music.reset("seed-" + i)).some(name => name.startsWith(title)));
+  throw new Error("No board selected " + name);
+}
+
+test("only source-traceable public-domain MIDI tracks are displayed", () => {
+  assert.equal(melodyTracks.length, 6);
+  assert.equal(createBrickMusic().count, melodyTracks.length);
+  for (const tune of melodyTracks) {
+    assert.ok(tune.name && tune.source.url && tune.source.blobSha);
+    assert.match(tune.source.license, /Public Domain/);
+    assert.ok(tune.notes.length > 32, tune.name);
+    assert.ok(tune.loop > tune.notes.at(-1)[0]);
+    assert.ok(tune.notes.every(([at, pitch, duration]) => at >= 0 && pitch >= 0 && pitch <= 127 && duration > 0));
+    for (let i = 1; i < tune.notes.length; i++) assert.ok(tune.notes[i][0] >= tune.notes[i - 1][0]);
   }
 });
 
-test("MIDI notes deepen as lives decrease without changing melodies or timing", () => {
-  const music = createBrickMusic();
-  const noteAt = lives => {
-    music.reset("life-pitch");
-    music.setLives(lives, 5);
-    return music.next();
+test("Für Elise opening follows the source MIDI's pitches and timing", () => {
+  const tune = melodyTracks.find(t => t.name.startsWith("Für Elise"));
+  assert.deepEqual(tune.notes.slice(0, 9).map(note => note[1]), [76,75,76,75,76,71,74,72,69]);
+  approximate(tune.notes[1][0], .2083);
+  approximate(tune.notes[8][0], 1.6667);
+  approximate(tune.notes[8][2], .4167);
+  const prelude = melodyTracks.find(t => t.name.startsWith("Prelude in C"));
+  assert.ok(prelude.notes.some((note, i) => i && note[0] - prelude.notes[i - 1][0] - prelude.notes[i - 1][2] > .2), "MIDI rests are preserved");
+});
+
+test("lives and descent never transpose the actual composition", () => {
+  const music = choose("Für Elise");
+  music.reset("unused");
+  const baseline = () => {
+    const selected = choose("Für Elise");
+    return selected.next();
   };
-  const notes = [5, 4, 3, 2, 1, 0].map(noteAt);
-  for (let i = 1; i < notes.length; i++) {
-    assert.ok(notes[i].frequency < notes[i - 1].frequency);
-    assert.equal(notes[i].wave, notes[0].wave);
-    assert.equal(notes[i].duration, notes[0].duration);
-    assert.equal(notes[i].volume, notes[0].volume);
+  const expected = baseline();
+  for (const lives of [5, 4, 3, 2, 1, 0]) {
+    const selected = choose("Für Elise");
+    selected.setLives(lives, 5);
+    selected.setDepth(100);
+    assert.deepEqual(selected.next(), expected);
   }
-  assert.ok(Math.abs(notes[0].frequency / notes.at(-1).frequency - 2) < .001);
-  assert.deepEqual(noteAt(5), notes[0]);
-  music.setLives(0, 5);
-  music.reset("life-pitch");
-  assert.deepEqual(music.next(), notes[0]);
 });
 
-test("infinite descent deepens the melody while combining with lives", () => {
-  const music = createBrickMusic();
-  const noteAt = (lives, rows) => {
-    music.reset("infinite-pitch");
-    music.setLives(lives, 5);
-    music.setDepth(rows);
-    return music.next();
-  };
-  const normal = noteAt(5, 0);
-  const descended = noteAt(5, 8);
-  const deeper = noteAt(5, 16);
-  const combined = noteAt(2, 16);
-  const lowest = noteAt(0, 100);
-  assert.ok(normal.frequency > descended.frequency);
-  assert.ok(descended.frequency > deeper.frequency);
-  assert.ok(deeper.frequency > combined.frequency);
-  assert.ok(combined.frequency > lowest.frequency);
-  assert.ok(Math.abs(normal.frequency / lowest.frequency - Math.pow(2, 18 / 12)) < .001);
-  assert.equal(lowest.wave, normal.wave);
-  assert.equal(lowest.duration, normal.duration);
-  assert.deepEqual(noteAt(5, 0), normal);
-  music.setDepth(12);
-  music.reset("infinite-pitch");
-  assert.deepEqual(music.next(), normal);
+test("seeded board and round selection remains deterministic with variation", () => {
+  const first = createBrickMusic(), second = createBrickMusic(), choices = new Set();
+  for (let i = 0; i < 100; i++) {
+    const seed = "board-" + i + ":round-1";
+    assert.equal(first.reset(seed), second.reset(seed));
+    assert.deepEqual(first.next(), second.next());
+    choices.add(first.name);
+  }
+  assert.equal(choices.size, melodyTracks.length);
 });
 
-test("multiplayer snapshots include actual infinite descent progress", () => {
+test("a brick hit plays a short phrase on the MIDI clock instead of one hit per note", () => {
+  const music = choose("Für Elise"), output = [];
+  const kit = { context: { currentTime: 3 }, blip: (...args) => output.push(args) };
+  assert.equal(music.hit(kit), true);
+  assert.ok(output.length >= 5, "first hit must trigger several notes");
+  approximate(output[0][4], 0);
+  approximate(output[1][4], .2083);
+  approximate(output[2][4], .4167);
+  assert.ok(output.every(n => n[2] > 0 && n[4] >= 0));
+  const start = output.length;
+  assert.equal(music.hit(kit), true);
+  assert.ok(output.length > start, "rapid hits extend the existing phrase");
+  assert.ok(output[start][4] >= output.at(start - 1)[4], "phrase continuation retains original timing");
+});
+
+test("dense combos stay bounded, pause cancels audio, and replay resets the melody", () => {
+  const music = choose("Für Elise"), output = [];
+  let canceled = 0;
+  const kit = { context: { currentTime: 7 }, blip: (...args) => { output.push(args); return () => canceled++; } };
+  for (let i = 0; i < 60; i++) music.hit(kit);
+  assert.ok(output.length > 5 && output.length < 40);
+  assert.ok(output.at(-1)[4] < 5);
+  for (let i = 1; i < output.length; i++) assert.ok(output[i][4] >= output[i - 1][4]);
+  music.clearQueue();
+  assert.equal(canceled, output.length);
+  const beforeResume = output.length;
+  music.hit(kit);
+  approximate(output[beforeResume][4], 0);
+  music.reset("retry");
+  const beforeRetry = output.length;
+  assert.equal(music.hit(kit), true);
+  approximate(output[beforeRetry][4], 0);
+  const before = output.length;
+  assert.equal(music.hit(null), false);
+  assert.equal(output.length, before);
+});
+
+test("solo and multiplayer display the actual selected tune and bundle the same music engine", () => {
+  for (const html of [soloHtml, multiHtml]) {
+    assert.doesNotMatch(html, /id="musicTrack"|id="midiFile"|id="loadMidi"|midiPick|LOAD LICENSED MIDI/);
+    assert.match(html, /brickMusic\.hit\((?:soundKit|soundOn\?soundKit:null)(?:,pan)?\)/);
+    assert.match(html, /brickMusic\.reset\(/);
+    assert.match(html, /songStatus/);
+  }
+  assert.match(soloHtml, /brickMusic\.reset\(seed\)/);
+  assert.match(multiHtml, /brickMusic\.reset\(s\.seed/);
+  assert.match(serverSource, /descentRows:S\?\.descent\?\.rows\|\|0/);
+  for (const bundle of [soloCoreSource, browserCoreSource]) {
+    assert.equal(runInNewContext(bundle + "\ntypeof createBrickMusic"), "function");
+    assert.equal(runInNewContext(bundle + "\ncreateBrickMusic().count"), melodyTracks.length);
+    assert.equal(runInNewContext(bundle + "\ncreateBrickMusic().reset('seed-1')"), createBrickMusic().reset("seed-1"));
+  }
+});
+
+test("multiplayer snapshots retain real infinite descent progress", () => {
   const server = loadServer();
   const room = makeRoom(server, "infinite", 2);
   const instance = roomInstance(server, room);
   assert.equal(instance.snapshot(false).descentRows, 0);
   room.sim.descent.rows = 6;
   assert.equal(instance.snapshot(false).descentRows, 6);
-});
-
-test("same board or multiplayer round chooses the same tune, with varied seeds", () => {
-  const a = createBrickMusic(), b = createBrickMusic();
-  const choices = new Set();
-  for (let n = 0; n < 100; n++) {
-    const key = "board-" + n + ":round-1";
-    const first = a.reset(key), second = b.reset(key);
-    assert.equal(first, second);
-    assert.deepEqual(a.next(), b.next());
-    choices.add(first);
-  }
-  assert.equal(choices.size, 12);
-});
-
-test("each hit plays the next note, loops at the end, and restarts on retry", () => {
-  const music = createBrickMusic();
-  music.reset("example-board");
-  const first = music.next();
-  const sequence = [first];
-  for (let i = 1; i < music.length; i++) sequence.push(music.next());
-  assert.deepEqual(music.next(), first);
-  music.reset("example-board");
-  assert.deepEqual(music.next(), first);
-  assert.ok(sequence.some(note => note.frequency !== first.frequency));
-});
-
-test("rapid combos schedule distinct notes instead of simultaneous noise", () => {
-  const music = createBrickMusic();
-  music.reset("combo");
-  const output = [];
-  const kit = { context: { currentTime: 3 }, blip: (...args) => output.push(args) };
-  for (let i = 0; i < 100; i++) music.hit(kit);
-  assert.ok(output.length >= 3 && output.length <= 12);
-  for (let i = 1; i < output.length; i++) {
-    assert.ok(output[i][4] > output[i - 1][4]);
-  }
-  assert.ok(output.every(note => note[4] <= .5));
-  kit.context.currentTime = 4;
-  music.hit(kit);
-  assert.equal(output.at(-1)[4], 0);
-  const count = output.length;
-  music.hit(null);
-  assert.equal(output.length, count);
-});
-
-test("solo and multiplayer use the same automatic music source", () => {
-  for (const html of [soloHtml, multiHtml]) {
-    assert.doesNotMatch(html, /id="musicTrack"|id="midiFile"|id="loadMidi"|midiPick|LOAD LICENSED MIDI/);
-    assert.match(html, /brickMusic\.hit\((?:soundKit|soundOn\?soundKit:null)(?:,pan)?\)/);
-    assert.match(html, /brickMusic\.reset\(/);
-  }
-  assert.match(soloHtml, /brickMusic\.reset\(seed\)/);
-  assert.match(soloHtml, /brickMusic\.setLives\(lives, MAX_LIVES\)/);
-  assert.match(soloHtml, /brickMusic\.setDepth\(S\.descent\?\.rows \|\| 0\)/);
-  assert.match(multiHtml, /brickMusic\.setLives\(mine\.lives,s\.mode===\"versus\"\?6:3\*s\.players\.length\)/);
-  assert.doesNotMatch(soloHtml, /hbT|danger vignette|rgba\(255,0,40/);
-  assert.match(multiHtml, /brickMusic\.reset\(s\.seed/);
-  assert.match(multiHtml, /brickMusic\.setDepth\(s\.mode===\"infinite\"\?s\.descentRows:0\)/);
-  assert.match(serverSource, /descentRows:S\?\.descent\?\.rows\|\|0/);
-  for (const bundle of [soloCoreSource, browserCoreSource]) {
-    assert.equal(runInNewContext(bundle + "\ntypeof createBrickMusic"), "function");
-    assert.equal(runInNewContext(bundle + "\ncreateBrickMusic().count"), 12);
-  }
-});
-
-test("dense hit bursts stay within 150 ms and reset on pause", () => {
-  const music = createBrickMusic(), notes=[];
-  music.reset("dense");
-  const kit={context:{currentTime:5},blip:(...args)=>notes.push(args)};
-  for(let i=0;i<40;i++)music.hit(kit);
-  assert.ok(notes.length<=3);
-  assert.ok(notes.every(n=>n[4]<=.15+1e-9));
-  music.clearQueue();assert.equal(music.hit(kit),true);
-  assert.equal(notes.at(-1)[4],0);
-  music.reset("retry");assert.equal(music.hit(kit),true);
-  assert.equal(notes.at(-1)[4],0);
 });
