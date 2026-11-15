@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import { soloHtml, multiHtml } from "./helpers.js";
+import { withPwa } from "../src/pwa.js";
 
 const leaderboard=readFileSync(new URL("../src/leaderboard.html",import.meta.url),"utf8");
 const docs=readFileSync(new URL("../docs/MULTIPLAYER_REDESIGN.md",import.meta.url),"utf8");
@@ -68,11 +69,12 @@ test("liminal rankings and menus keep essential actions with no arcade decoratio
 
 
 test("all game screens use pixel type and the same curved CRT glass",()=>{
- for(const html of [soloHtml,multiHtml,leaderboard]){
-  assert.match(html,/html,body,body \*\{font-family:'Press Start 2P',ui-monospace,monospace!important\}/);
+ for(const page of [soloHtml,multiHtml,leaderboard]){
+  const html=withPwa(page);
+  assert.match(html,/html,body,body \*\{font-family:var\(--bricks-font\)!important\}/);
   assert.match(html,/<div id="crt" aria-hidden="true"><\/div>/);
   assert.match(html,/#crt\{[\s\S]*?z-index:60;pointer-events:none;/);
-  assert.match(html,/border-radius:4% \/ 3%;opacity:1/);
+  assert.match(html,/border-radius:var\(--bricks-crt-radius\);opacity:1/);
   assert.match(html,/#crt::before\{/);
   assert.match(html,/crtGlassRoll 13s linear infinite/);
   assert.match(html,/@media\(prefers-reduced-motion:reduce\)\{#crt\{display:block!important;animation:none!important\}/);
