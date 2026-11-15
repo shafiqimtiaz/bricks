@@ -58,7 +58,7 @@ function genLevel(){
   const hueFor = k => scheme === 0 ? baseH + k * 137.5 : scheme === 1 ? baseH + (k % 2 ? 180 : 0) + k * 12 : baseH + k * 28;
   palette = [];
   for (let k = 0; k < 16; k++) palette.push(`hsl(${hueFor(k) % 360},${sat + (k % 3) * 6}%,${R(36, 50)}%)`);
-  wallCols = ['', `hsl(${baseH},4%,38%)`, `hsl(${baseH},5%,48%)`, `hsl(${baseH},6%,58%)`];
+  wallCols = ['', `hsl(${baseH},${sat+12}%,34%)`, `hsl(${baseH},${sat+14}%,44%)`, `hsl(${baseH},${sat+16}%,54%)`];
   { const vr = mulberry(hash(seed + ':1:vapor')), VH = [322, 292, 188, 265, 176, 338, 205], o = Math.floor(vr() * 7);
     vPal = []; for (let k = 0; k < 16; k++) vPal.push(`hsl(${VH[(k + o) % 7]},${68 + vr() * 18}%,${54 + vr() * 12}%)`);
     vWall = ['', '#4a2f78', '#6a46a3', '#8f6bd0']; }
