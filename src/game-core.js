@@ -1,4 +1,5 @@
 import { createBrickMusic } from "./brick-music.js";
+import { melodyTracks } from "./music-tracks.js";
 import { buildLevelV4 } from "./level-v4.js";
 function drawPowerStatus(ctx,defs,globalFx,playerFx,width,y){
  const active=Object.values(defs).filter(d=>d.t&&(d.own?playerFx[d.id]:globalFx[d.id])>0);
@@ -424,6 +425,6 @@ function stageFit(vw,vh,stageW,stageH,panelOpen,hudHeight=0){
   stageLeft:(vw-width-(dock?sidebar+gap:0))/2,unit:Math.min(14,Math.max(3,Math.min(width/100,height/150)))};
 }
 export {drawPowerStatus,randomPlayerName,arenaLayout,squareArena,hash,random,bricks,infiniteOpeningBoard,normalizeBallVelocity,drawBrickTile,aimDragAngle,drawAimGuide,soloBrickNote,createASMR,boardView,viewMatrix,viewPoint,stageFit,ballSpeed,aimVelocity};
-const browserCorePrelude="const __name=(target)=>target;\n";
+const browserCorePrelude="const __name=(target)=>target;\nconst melodyTracks="+JSON.stringify(melodyTracks)+";\n";
 export const browserCoreSource=browserCorePrelude+[drawPowerStatus,randomPlayerName,arenaLayout,normalizeBallVelocity,drawBrickTile,aimDragAngle,drawAimGuide,soloBrickNote,createASMR,createBrickMusic,boardView,viewMatrix,viewPoint,stageFit,ballSpeed,aimVelocity].map(fn=>fn.toString()).join("\n");
 export const soloCoreSource=browserCorePrelude+[drawPowerStatus,randomPlayerName,arenaLayout,hash,random,bricks,infiniteOpeningBoard,buildLevelV4,normalizeBallVelocity,drawBrickTile,aimDragAngle,drawAimGuide,soloBrickNote,createASMR,createBrickMusic,stageFit,ballSpeed,aimVelocity].map(fn=>fn.toString()).join("\n");
