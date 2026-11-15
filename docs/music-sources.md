@@ -4,20 +4,18 @@ The game now plays **timed note events extracted from real MIDI tracks**, not a 
 
 ## Shipped tracks
 
-The current eight tracks come from public-domain **Mutopia Project** editions, copied with their provenance at [wustep/jev-playground reference MIDI](https://github.com/wustep/jev-playground/tree/main/docs/ref-midi/public). Each entry in `src/music-tracks.js` records the **exact Git blob SHA**, chosen MIDI track index, extraction method and source URL. These are actual sequenced editions, but only one voice is rendered, not a full piano performance.
+The current six tracks come from public-domain **Mutopia Project** editions, copied with their provenance at [wustep/jev-playground reference MIDI](https://github.com/wustep/jev-playground/tree/main/docs/ref-midi/public). Each entry in `src/music-tracks.js` records the **exact Git blob SHA**, chosen MIDI track index, extraction method and source URL. These are actual sequenced editions, but only one voice is rendered, not a full piano performance.
 
 | Game title | MIDI source | Track used |
 | --- | --- | --- |
 | Für Elise — Beethoven | [Mutopia edition](https://github.com/wustep/jev-playground/blob/main/docs/ref-midi/public/beethoven-woo59-fur-elise.mid) | 1 |
-| Moonlight Sonata — Beethoven | [Mutopia edition](https://github.com/wustep/jev-playground/blob/main/docs/ref-midi/public/beethoven-op27-2-moonlight-1.mid) | 1 |
 | Prelude in C — J. S. Bach | [Mutopia edition](https://github.com/wustep/jev-playground/blob/main/docs/ref-midi/public/bach-bwv846-wtk1-prelude1.mid) | 2 |
-| Invention No. 1 — J. S. Bach | [Mutopia edition](https://github.com/wustep/jev-playground/blob/main/docs/ref-midi/public/bach-bwv772-invention-01.mid) | 1 |
-| Nocturne Op. 9 No. 2 — Chopin | [Mutopia edition](https://github.com/wustep/jev-playground/blob/main/docs/ref-midi/public/chopin-op9-2-nocturne.mid) | 1 |
 | Prelude Op. 28 No. 4 — Chopin | [Mutopia edition](https://github.com/wustep/jev-playground/blob/main/docs/ref-midi/public/chopin-op28-4-prelude.mid) | 1 |
 | Clair de lune — Debussy | [Mutopia edition](https://github.com/wustep/jev-playground/blob/main/docs/ref-midi/public/debussy-l75-clair-de-lune.mid) | 1 (highest simultaneous pitch) |
 | Pathétique Adagio — Beethoven | [Mutopia edition](https://github.com/wustep/jev-playground/blob/main/docs/ref-midi/public/beethoven-op13-pathetique-2.mid) | 1 (highest simultaneous pitch) |
+| Première Arabesque — Debussy | [Mutopia edition](https://github.com/wustep/jev-playground/blob/main/docs/ref-midi/public/debussy-l66-arabesque-1.mid) | 1 (highest simultaneous pitch) |
 
-Mutopia's source pages document the editions' public-domain status. This repository does not distribute the source MIDI binary; it distributes extracted note events from those editions.
+Mutopia's source pages document the public-domain status of these six specific MIDI editions. Other Mutopia editions may use Creative Commons Attribution or ShareAlike licences and must not be assumed public domain. This repository does not distribute the source MIDI binary; it distributes extracted note events from those editions.
 
 ## Pop songs not yet cleared
 
