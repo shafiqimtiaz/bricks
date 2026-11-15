@@ -329,6 +329,7 @@ html,body,body *{font-family:'Press Start 2P',ui-monospace,monospace!important}
 #hudMenu button,#hudMenu a,#panel button{text-shadow:0 0 5px #b8eadb1a}
 #panel .lobbyHero .byline{font-style:normal;font-size:clamp(6px,calc(var(--u)*1.5),9px);line-height:1.9;letter-spacing:.02em;text-transform:uppercase;text-wrap:balance;max-width:100%;margin-inline:auto}
 #hud #songStatus{grid-column:1/-1;white-space:normal;overflow-wrap:anywhere;font-size:.7em;line-height:1.8;color:#a5b7ad;padding:calc(var(--u)*1.5)}
+#hud #midiSelect{grid-column:1/-1;width:100%;min-width:0;padding:calc(var(--u)*2);font:inherit;font-size:.7em;color:var(--l-ink);background:#07110f;border:1px solid #ffffff25;border-radius:2px;text-overflow:ellipsis}
 #hud #songStatus[hidden]{display:none}
 </style>
 </head>
@@ -343,7 +344,7 @@ html,body,body *{font-family:'Press Start 2P',ui-monospace,monospace!important}
   <span id="netStatus" role="status" aria-live="polite" hidden></span>
   <button id="hudMenuToggle" type="button" aria-label="Open menu" aria-expanded="false">☰</button>
   <div id="hudBar" aria-hidden="true"><i id="hudFill"></i></div>
-  <div id="hudMenu" hidden><div id="menuStatus" role="status"></div><div id="songStatus" aria-label="Round melody" hidden></div><button id="sound" type="button" aria-pressed="true">SOUND ON</button><button id="sensitivityToggle" type="button">SENS LOW</button><a href="/">SOLO</a><a href="/multiplayer" aria-current="page">LOBBY</a><a href="/leaderboard">SCORES</a>
+  <div id="hudMenu" hidden><div id="menuStatus" role="status"></div><div id="songStatus" aria-label="Round melody" hidden></div><button id="midiImport" type="button">IMPORT MIDI</button><select id="midiSelect" aria-label="Music library"></select><button id="sound" type="button" aria-pressed="true">SOUND ON</button><button id="sensitivityToggle" type="button">SENS LOW</button><a href="/">SOLO</a><a href="/multiplayer" aria-current="page">LOBBY</a><a href="/leaderboard">SCORES</a>
   </div>
  </div>
  <div id="panel">
@@ -391,6 +392,7 @@ html,body,body *{font-family:'Press Start 2P',ui-monospace,monospace!important}
    <div class="note">ROUND <span id="round">—</span> · <span id="timer">0:00</span></div>
   </section>
  </div>
+ <input id="midiUpload" type="file" accept=".mid,.midi,audio/midi,audio/x-midi" multiple hidden>
  <div id="toast" role="status" aria-live="polite"></div>
 </div>
 <div id="crt" aria-hidden="true"></div>
@@ -1173,6 +1175,7 @@ window.addEventListener("keydown",event=>{if(event.key==="Escape"&&!$("hudMenu")
 // A mouse click should not leave focus on a HUD button, or the next key press would trigger it again.
 $("hud").addEventListener("click",event=>{if(event.detail>0)event.target.closest("button")?.blur();});
 resize();
+setupMidiLibrary(brickMusic);
 $("playerName").value=profileName;
 const invitedPath=location.pathname.match(/^\/multiplayer\/([A-Z2-9]{6})\/?$/i);
 if(invitedPath)loadInvite(invitedPath[1].toUpperCase());
