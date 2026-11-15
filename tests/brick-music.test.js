@@ -17,7 +17,7 @@ function choose(name) {
 }
 
 test("only source-traceable public-domain MIDI tracks are displayed", () => {
-  assert.equal(melodyTracks.length, 8);
+  assert.equal(melodyTracks.length, 6);
   assert.equal(createBrickMusic().count, melodyTracks.length);
   for (const tune of melodyTracks) {
     assert.ok(tune.name && tune.source.url && tune.source.blobSha);
