@@ -253,6 +253,7 @@ html,body,body *{font-family:'Press Start 2P',ui-monospace,monospace!important}
 #nameModal,#nameForm{border-radius:2px}
 #panel button,#nameForm button,#hudMenu button{text-shadow:0 0 5px #b8eadb1a}
 #hud #songStatus{grid-column:1/-1;white-space:normal;overflow-wrap:anywhere;font-size:.7em;line-height:1.8;color:#a5b7ad;padding:calc(var(--u)*1.5)}
+#hud #midiSelect{grid-column:1/-1;width:100%;min-width:0;padding:calc(var(--u)*2);font:inherit;font-size:.7em;color:var(--l-ink);background:#07110f;border:1px solid #ffffff25;border-radius:2px;text-overflow:ellipsis}
 </style>
 </head>
 <body class="vintage">
@@ -267,6 +268,8 @@ html,body,body *{font-family:'Press Start 2P',ui-monospace,monospace!important}
     <div class="menuIdentity"><strong>BRICKS</strong></div>
     <div id="hudStatus" role="status"></div>
     <div id="songStatus" aria-label="Board melody"></div>
+    <button id="midiImport" type="button">IMPORT MIDI</button>
+    <select id="midiSelect" aria-label="Music library"></select>
     <button id="top" type="button">SCORES</button><a id="multi" href="/multiplayer" title="Multiplayer (2–4 players)" aria-label="Play multiplayer">MULTIPLAYER</a>
     <button id="daily" type="button">DAILY</button><button id="newb" type="button">NEW RUN</button>
     <button id="soundToggle" type="button" aria-pressed="true">SOUND ON</button>
@@ -275,6 +278,7 @@ html,body,body *{font-family:'Press Start 2P',ui-monospace,monospace!important}
     <button id="soloMode" type="button" aria-label="Classic mode. Switch to Infinite">CLASSIC</button>
    </div>
   </div>
+  <input id="midiUpload" type="file" accept=".mid,.midi,audio/midi,audio/x-midi" multiple hidden>
   <div id="toast"></div>
   <div id="panel" hidden="">
     <div id="ptitle"></div>
@@ -1036,12 +1040,12 @@ function closeMenu(restoreFocus=false){const open=!P('hudMenu').hidden;P('hudMen
 P('soundToggle').onclick=()=>{soundOn=!soundOn;if(!soundOn)brickMusic.clearQueue();P('soundToggle').textContent='SOUND '+(soundOn?'ON':'OFF');P('soundToggle').setAttribute('aria-pressed',String(soundOn));if(soundOn)audioInit();};
 P('sensitivityToggle').textContent='SENSITIVITY '+SENS_NAMES[sensitivityLevel];
 P('sensitivityToggle').onclick=()=>{sensitivityLevel=(sensitivityLevel+1)%SENS_VALUES.length;try{localStorage.setItem(SENS_KEY,String(sensitivityLevel));}catch(e){}P('sensitivityToggle').textContent='SENSITIVITY '+SENS_NAMES[sensitivityLevel];};
-P('hudMenu').addEventListener('click',e=>{if(e.target.id!=='soundToggle'&&e.target.id!=='sensitivityToggle'&&e.target.id!=='soloMode')closeMenu();});
+P('hudMenu').addEventListener('click',e=>{if(!['soundToggle','sensitivityToggle','soloMode','midiImport','midiSelect'].includes(e.target.id))closeMenu();});
 document.addEventListener('pointerdown',e=>{if(!e.target.closest('#hudMenu,#hudMenuToggle'))closeMenu();});
 window.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!P('nameModal').hidden)closeNameModal();else closeMenu(true);}});
 // A mouse click should not leave focus on a HUD button, or Space would trigger it again instead of launching.
 P('hud').addEventListener('click',e=>{if(e.detail>0)e.target.closest('button')?.blur();});
-resize();startBoard();requestAnimationFrame(frame);
+resize();startBoard();setupMidiLibrary(brickMusic);requestAnimationFrame(frame);
 })();
 </script>
 
