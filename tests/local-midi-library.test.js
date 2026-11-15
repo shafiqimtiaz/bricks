@@ -66,3 +66,45 @@ test("both game modes expose local MIDI controls and the browser parser", () => 
     assert.equal(runInNewContext(script + "\ntypeof setupMidiLibrary"), "function");
   }
 });
+
+test("MIDI upload survives the browser bundler renaming the selector function", async () => {
+  const bytes = fixture();
+  for (const source of [soloCoreSource, browserCoreSource]) {
+    const renamed = source.replace(
+      "const selectMidiMelody = function selectMidiMelody(",
+      "const selectMidiMelody = function selectMidiMelody2("
+    );
+    assert.notEqual(renamed, source, "selector must have a stable browser binding");
+    const listeners = {};
+    const status = { textContent: "" };
+    const input = {
+      files: [{ name: "Naruto Main Theme.mid", arrayBuffer: async () => bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) }],
+      value: "",
+      addEventListener: (type, listener) => { listeners[type] = listener; }
+    };
+    const select = {
+      value: "", options: [],
+      replaceChildren(option) { this.options = [option]; this.value = option.value; },
+      add(option) { this.options.push(option); },
+      addEventListener() {}
+    };
+    const button = { addEventListener() {} };
+    const music = {
+      name: "BOARD",
+      setCustomTrack(track) { this.name = track.name; this.notes = track.notes; },
+      useBoardTrack() { this.name = "BOARD"; }
+    };
+    const controls = { midiUpload: input, midiSelect: select, midiImport: button, songStatus: status };
+    const context = {
+      document: { getElementById: id => controls[id] },
+      Option: class { constructor(label, value) { this.label = label; this.value = value; } },
+      localStorage: { getItem: () => null, setItem() {} },
+      music
+    };
+    runInNewContext(renamed + String.fromCharCode(10) + "setupMidiLibrary(music)", context);
+    await listeners.change();
+    assert.equal(music.name, "Naruto Main Theme");
+    assert.equal(music.notes.length, 20);
+    assert.equal(status.textContent, "MELODY · Naruto Main Theme");
+  }
+});
