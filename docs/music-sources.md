@@ -1,6 +1,6 @@
 # BRICKS music sources
 
-The game now plays **timed note events extracted from real MIDI tracks**, not a list of 32 notes advanced by brick hits. Source MIDI note-on times, lengths, tempo changes and rests are converted to seconds. A brick hit starts a short phrase; additional hits extend playback on the same clock. The original note pitches are not octave-folded or transposed by life count or Infinite descent.
+The game uses note events extracted from real MIDI tracks rather than the former unverified 32-note sequences. **Each destroyed brick immediately plays exactly one note**, advancing the melody by one step; no further notes play without additional brick hits. MIDI pitches and individual note lengths are retained, but note onset times and rests do not control when sounds start—the player's hits do. Pitches are never octave-folded or transposed by life count or Infinite descent.
 
 ## Shipped tracks
 
